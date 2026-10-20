@@ -1,17 +1,24 @@
 require "test_helper"
+require_relative "../support/domain_accounts"
 
 class EnrollmentsTest < ActionDispatch::IntegrationTest
+  include DomainAccounts
+
   setup do
-    Rails.application.load_seed
-    @client = User.find_by!(email: "client@healthie.example")
-    @other = User.find_by!(email: "unrelated-client@healthie.example")
-    @provider = User.find_by!(email: "provider@healthie.example")
-    @available = User.find_by!(email: "empty-provider@healthie.example").provider
-    @enrollment = @client.client.enrollments.find_by!(provider: @provider.provider)
+    User.destroy_all
+    @client = create_test_account("client", "Relationship Client")
+    @other = create_test_account("client", "Other Client")
+    @provider = create_test_account("provider", "Current Provider")
+    @second = create_test_account("provider", "Second Provider")
+    @available = create_test_account("provider", "Available Provider").provider
+    @enrollment = @client.client.enrollments.create!(provider: @provider.provider)
+    @client.client.enrollments.create!(provider: @second.provider, plan: :premium)
+    @other.client.enrollments.create!(provider: @provider.provider)
+    @client.client.journal_entries.create!(text: "Retain this entry after removal")
   end
 
   def login(user)
-    post user_session_path, params: { user: { email: user.email, password: "Healthie-demo-2026" } }
+    post user_session_path, params: { user: { email: user.email, password: DomainAccounts::PASSWORD } }
   end
 
   test "client list and directory are scoped and Basic default or Premium add and remove work" do
@@ -69,9 +76,9 @@ class EnrollmentsTest < ActionDispatch::IntegrationTest
     get enrollments_path
     assert_response :success
     assert_select "tbody tr", count: 2
-    assert_match "Alex Rivera", response.body
-    assert_match "Sam Chen", response.body
-    assert_no_match "Jamie Brooks", response.body
+    assert_match @client.name, response.body
+    assert_match @other.name, response.body
+    assert_no_match @available.name, response.body
     assert_select "form[action^='/enrollments']", count: 0
     assert_no_difference "Enrollment.count" do
       post enrollments_path, params: { enrollment: { client_id: @client.client.id, provider_id: @available.id } }

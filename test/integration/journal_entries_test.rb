@@ -1,23 +1,29 @@
 require "test_helper"
+require_relative "../support/domain_accounts"
 
 class JournalEntriesTest < ActionDispatch::IntegrationTest
+  include DomainAccounts
+
   setup do
-    Rails.application.load_seed
-    @owner = User.find_by!(email: "client@healthie.example")
-    @other = User.find_by!(email: "unrelated-client@healthie.example")
-    @entry = @owner.client.journal_entries.first
-    @foreign = @other.client.journal_entries.first
+    User.destroy_all
+    @owner = create_test_account("client", "Journal Owner")
+    @other = create_test_account("client", "Other Journal Owner")
+    @provider = create_test_account("provider", "Journal Reader")
+    [ @owner, @other ].each { |account| account.client.enrollments.create!(provider: @provider.provider) }
+    @entry = @owner.client.journal_entries.create!(text: "Owner's original entry")
+    @owner.client.journal_entries.create!(text: "Owner's second entry")
+    @foreign = @other.client.journal_entries.create!(text: "Other client's private entry")
   end
 
   def login(user)
-    post user_session_path, params: { user: { email: user.email, password: "Healthie-demo-2026" } }
+    post user_session_path, params: { user: { email: user.email, password: DomainAccounts::PASSWORD } }
   end
 
   test "owner CRUD persists text only and scoped listing excludes others" do
     login(@owner)
     get journal_entries_path
     assert_response :success
-    assert_select "article", count: 3
+    assert_select "article", count: 2
     assert_no_match @foreign.text, response.body
     get new_journal_entry_path
     assert_response :success
@@ -76,7 +82,7 @@ class JournalEntriesTest < ActionDispatch::IntegrationTest
   end
 
   test "current providers can list and read but cannot create edit update or delete client journals" do
-    login(User.find_by!(email: "provider@healthie.example"))
+    login(@provider)
     get journal_entries_path
     assert_response :success
     get new_journal_entry_path
@@ -113,7 +119,7 @@ class JournalEntriesTest < ActionDispatch::IntegrationTest
   end
 
   test "instance policies independently enforce ownership and role" do
-    provider = User.find_by!(email: "provider@healthie.example")
+    provider = @provider
     assert JournalEntryPolicy.new(@owner, @entry).show?
     assert JournalEntryPolicy.new(provider, @entry).show?
     assert_not JournalEntryPolicy.new(@other, @entry).show?
@@ -125,6 +131,6 @@ class JournalEntriesTest < ActionDispatch::IntegrationTest
       end
     end
     assert_equal @owner.client.journal_entries.order(:id).pluck(:id), JournalEntryPolicy::Scope.new(@owner, JournalEntry.all).resolve.order(:id).pluck(:id)
-    assert_equal JournalEntry.order(:id).pluck(:id), JournalEntryPolicy::Scope.new(provider, JournalEntry.all).resolve.order(:id).pluck(:id)
+    assert_equal [ @entry.id, @owner.client.journal_entries.order(:id).last.id, @foreign.id ], JournalEntryPolicy::Scope.new(provider, JournalEntry.all).resolve.order(:id).pluck(:id)
   end
 end
