@@ -8,6 +8,8 @@ These agreed role and execution policies supersede older generic ticket boilerpl
 
 Developer is Symphony's parent session and sole application implementation owner. Read the complete issue and the domain documents required by [AGENTS.md](../AGENTS.md). State the approach and log notable assumptions on the issue before editing; implement only its acceptance criteria with small, explainable changes.
 
+For authorization changes, Developer and QA follow [authorization.md](agents/authorization.md); include that policy in the QA assignment and use its focused access checks during self-review and independent validation.
+
 Write the smallest useful set of tests for changed observable behavior and consequential failure cases. Test through real public interfaces with independently known expected results; avoid tests that mirror the implementation, mocks of internal collaborators and duplicate coverage. Existing tests or a targeted executable check can suffice when they already establish the behavior; explain that choice. TDD is optional: use test-first when helpful, but test ordering is not a delivery requirement.
 
 Run `bin/check` and the targeted behavior check required by the issue. Before creating the PR, perform one explicit self-review of the complete diff against (1) acceptance criteria and scope and (2) repository conventions, correctness, authorization, data constraints/migrations and test quality. Fix concrete findings and rerun affected checks. After feedback, review the repair delta; avoid repeated broad review cycles or speculative refactors. Record a concise self-review result in the Developer Workpad.
