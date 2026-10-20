@@ -6,8 +6,8 @@ class InterviewQueriesTest < ActiveSupport::TestCase
   test "four direct queries return intentional seed identities and explicitly ordered entries" do
     provider = User.find_by!(email: "provider@healthie.example").provider
     client = User.find_by!(email: "client@healthie.example").client
-    assert_equal [ "Alex Rivera", "Sam Chen" ], provider.clients.includes(:user).order(:id).map(&:name)
-    assert_equal [ "Morgan Patel", "Taylor Reed" ], client.providers.includes(:user).order(:id).map(&:name)
+    assert_equal [ "Sam Chen", "Alex Rivera" ], provider.clients.map(&:name)
+    assert_equal [ "Taylor Reed", "Morgan Patel" ], client.providers.map(&:name)
     expected = [ "An evening stretch helped me unwind.", "Prepared lunch for tomorrow.", "Walked after breakfast and felt energized." ]
     assert_equal expected, client.journal_entries.order(created_at: :desc, id: :desc).pluck(:text)
     assert_equal [ "Tried a new breakfast recipe.", *expected ], provider.journal_entries.order(created_at: :desc, id: :desc).pluck(:text)

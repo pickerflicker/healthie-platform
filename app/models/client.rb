@@ -1,6 +1,6 @@
 class Client < ApplicationRecord
   has_many :enrollments, dependent: :destroy
-  has_many :providers, through: :enrollments
+  has_many :providers, -> { order("enrollments.created_at DESC", "enrollments.id DESC").preload(:user) }, through: :enrollments
   has_many :journal_entries, dependent: :destroy
   belongs_to :user, inverse_of: :client
   delegate :name, :email, to: :user
@@ -10,7 +10,7 @@ class Client < ApplicationRecord
   before_destroy :retain_account_profile
 
   def self.provider_list_cache_key(client_id)
-    "clients/#{client_id}/provider-list/v1"
+    "clients/#{client_id}/provider-list/v2"
   end
 
   def provider_list
@@ -20,10 +20,10 @@ class Client < ApplicationRecord
   private
 
   def query_provider_list
-    enrollments.joins(provider: :user).order(:id)
-      .pluck(:id, :provider_id, "users.name", :plan).map do |enrollment_id, provider_id, name, plan|
-        { enrollment_id: enrollment_id, provider_id: provider_id, name: name, plan: plan }
-      end
+    enrollments.newest_first.preload(provider: :user).map do |enrollment|
+      { enrollment_id: enrollment.id, provider_id: enrollment.provider_id,
+        name: enrollment.provider.name, plan: enrollment.plan }
+    end
   end
 
   def matching_role

@@ -44,7 +44,7 @@ class EnrollmentsController < ApplicationController
       @available_providers = policy_scope(Provider, policy_scope_class: ProviderDirectoryPolicy::Scope)
         .where.not(id: current_user.client.enrollments.select(:provider_id)).includes(:user).order(:id)
     else
-      @enrollments = policy_scope(Enrollment).includes(client: :user).order(:id)
+      @enrollments = policy_scope(Enrollment).preload(client: :user).newest_first
     end
   end
 end

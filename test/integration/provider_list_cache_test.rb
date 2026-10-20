@@ -56,7 +56,7 @@ class ProviderListCacheTest < ActionDispatch::IntegrationTest
     extra = @client.enrollments.create!(provider: @extra, plan: :premium)
     assert_nil Rails.cache.read(Client.provider_list_cache_key(@client.id))
     assert_equal [], Rails.cache.read(other_key)
-    assert_equal [ @provider.id, @extra.id ], @client.provider_list.pluck(:provider_id)
+    assert_equal [ @extra.id, @provider.id ], @client.provider_list.pluck(:provider_id)
     @enrollment.update!(plan: :premium)
     assert_equal %w[premium premium], @client.provider_list.pluck(:plan)
     extra.destroy!

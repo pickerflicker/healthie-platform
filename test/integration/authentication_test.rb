@@ -46,7 +46,7 @@ class AuthenticationTest < ActionDispatch::IntegrationTest
     client = User.find_by!(role: "client")
     other = User.create_account!(name: "Other", email: "other@example.com", password: "test-password-123", role: "client")
     assert_equal [ client.client ], ClientPolicy::Scope.new(client, Client.all).resolve.to_a
-    assert_equal provider.provider.clients.order(:id).pluck(:id), ClientPolicy::Scope.new(provider, Client.all).resolve.order(:id).pluck(:id)
+    assert_equal provider.provider.clients.reorder(:id).pluck(:id), ClientPolicy::Scope.new(provider, Client.all).resolve.order(:id).pluck(:id)
     assert_equal [ provider.provider ], ProviderPolicy::Scope.new(provider, Provider.all).resolve.to_a
     assert_empty ProviderPolicy::Scope.new(client, Provider.all).resolve
     assert_not_includes ClientPolicy::Scope.new(client, Client.all).resolve, other.client

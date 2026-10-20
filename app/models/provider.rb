@@ -1,7 +1,7 @@
 class Provider < ApplicationRecord
   has_many :enrollments, dependent: :destroy
-  has_many :clients, through: :enrollments
-  has_many :journal_entries, through: :clients
+  has_many :clients, -> { order("enrollments.created_at DESC", "enrollments.id DESC").preload(:user) }, through: :enrollments
+  has_many :journal_entries, -> { reorder(nil) }, through: :clients
   belongs_to :user, inverse_of: :provider
   delegate :name, :email, to: :user
   validates :user_id, uniqueness: true

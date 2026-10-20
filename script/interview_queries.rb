@@ -4,8 +4,8 @@ provider = User.find_by!(email: "provider@healthie.example").provider
 client = User.find_by!(email: "client@healthie.example").client
 
 queries = {
-  "Provider's clients" => provider.clients.order(:id),
-  "Client's providers" => client.providers.order(:id),
+  "Provider's clients" => provider.clients,
+  "Client's providers" => client.providers,
   "Client's journal entries" => client.journal_entries.order(created_at: :desc, id: :desc),
   "Provider's combined journal feed" => provider.journal_entries.order(created_at: :desc, id: :desc)
 }

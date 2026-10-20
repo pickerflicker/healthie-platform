@@ -12,8 +12,8 @@ class EnrollmentTest < ActiveSupport::TestCase
     ids = Enrollment.order(:id).pluck(:id)
     Rails.application.load_seed
     assert_equal ids, Enrollment.order(:id).pluck(:id)
-    assert_equal %w[client@healthie.example unrelated-client@healthie.example], @provider.clients.joins(:user).order("users.email").pluck("users.email")
-    assert_equal %w[provider@healthie.example second-provider@healthie.example], @client.providers.joins(:user).order("users.email").pluck("users.email")
+    assert_equal %w[client@healthie.example unrelated-client@healthie.example], @provider.clients.joins(:user).reorder("users.email").pluck("users.email")
+    assert_equal %w[provider@healthie.example second-provider@healthie.example], @client.providers.joins(:user).reorder("users.email").pluck("users.email")
     assert_equal %w[basic premium], @client.enrollments.order(:plan).pluck(:plan)
     assert_empty @empty_provider.clients
     assert_empty User.find_by!(email: "empty-client@healthie.example").client.providers
