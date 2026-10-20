@@ -8,9 +8,15 @@ QA owns the test-case table, captures and accurate results. If QA cannot publish
 
 Evidence publication is complete only when:
 
-1. The saved PR comment contains the tested revision, results table and required uploaded screenshots; verify the rendered table and that each image loads with repository access.
+1. QA has inspected the actual local captures. The supported GitHub attachment upload succeeds for every required screenshot. Re-read the saved canonical comment through the authenticated CLI/API: confirm the tested revision, expected test rows, valid Markdown table structure, and embedded GitHub attachment URLs corresponding to every uploaded capture. No local image paths or unresolved upload placeholders remain.
 2. The staged changes and final PR diff contain no generated QA evidence; run the repository guard for both applicable comparisons.
-3. The PR description and Linear QA Workpad link directly to that comment. Repairs update the same report and identify the revision actually retested. An upload or rendering failure remains an explicit publication gap.
+3. The PR description and Linear QA Workpad link directly to that comment. Repairs update the same report and identify the revision actually retested. Missing/failed uploads, a malformed table or a known broken attachment remain publication gaps to fix before handoff.
+
+### Browser rendering is supplemental
+
+Opening GitHub to inspect the rendered comment is optional when permitted browser access is already available. Unavailable or declined GitHub browser access alone does not block publication, make the PR stay draft or justify moving a ticket to Blocked when the checks above pass. Record `GitHub rendering: NOT RUN (supplemental)` if it was not checked; do not label it PASS or conflate successful upload/saved-body checks with visual rendering. An observed rendering/attachment defect still needs repair.
+
+GitHub browser permission is separate from the application's required Playwright browser acceptance. This change does not relax feature testing or screenshot requirements. Respect a denied browser origin; do not retry it or use alternate browser/image-fetch routes to bypass the denial. Verify the permitted upload and saved-comment operations above instead, without claiming that they check rendering. This policy supersedes the earlier mandatory rendered-table/all-images check that blocked PIC-279.
 
 ## Report contract
 
