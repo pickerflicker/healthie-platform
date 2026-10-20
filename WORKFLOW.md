@@ -77,6 +77,8 @@ Before generating or publishing QA evidence, read /Users/smh/dev/healthie-platfo
 
 Before changing or reviewing authorization, record lookups or ownership parameters, read /Users/smh/dev/healthie-platform/docs/agents/authorization.md and include it in the QA assignment. Its Pundit conventions also apply to existing ticket clones; preserve the ticket's scope and established response contract.
 
+Before Rails feature implementation, repair or review, read /Users/smh/dev/healthie-platform/docs/agents/rails-guidance.md and the applicable skill files linked there. That canonical policy preserves Pundit, Devise, Redis and the existing Developer/QA contract over conflicting upstream defaults. Pass the policy and relevant skill references to QA; it applies to older ticket clones as well.
+
 Verify the project slug matches tracker.project_slug above, the issue is Todo or In Progress, the implemented gate grants this ticket ownership, and prerequisites meet the triage policy before editing. Move a claimed Todo issue to In Progress. Apply the laptop-local app/database/cache contract and activation checks in docs/operations.md.
 
 Use linear_graphql for reads/comments and linear_transition_issue for EVERY state change.
