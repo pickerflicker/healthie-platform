@@ -5,6 +5,18 @@ Use the existing supported Linear GitHub integration for
 `healthie-platform` (`c6cbdb1032a3`). No custom webhook, GitHub Action with a
 Linear token, or second status writer is required.
 
+## Authoritative delivery rule
+
+For this project's one-delivery-PR-per-ticket workflow, a verified merge into this repository's `main` completes the associated implementation ticket. Squash merge counts as delivery; completion must not depend on an agent remembering a description keyword. A closed unmerged PR does not count.
+
+[Complete merged Linear ticket](../.github/workflows/linear-completion.yml) runs on GitHub after merge, independently of the laptop, Symphony and model turns. It re-reads the PR, verifies the merged state/destination, derives the ticket from the established `pic-<number>-...` delivery branch and ensures a standalone `Closes PIC-<number>` line in the saved body. Existing description/evidence stays intact; replays are idempotent. This repairs missing or non-closing references and lets the existing Linear integration remain the sole issue-state writer. No Linear token or team-wide settings change is used.
+
+The hook processes only `pickerflicker/healthie-platform` merges into `main`. It ignores branches without a PIC delivery identifier, such as dependency updates, and never derives delivery from incidental parent/dependency mentions in the description. Conflicting closing directives for another ticket fail visibly rather than automatically closing multiple issues. Keep the ticket branch identifier when creating implementation PRs. It executes only trusted workflow code and PR metadata, with no checkout of PR files and only repository-scoped pull-request write permission.
+
+The inserted line precedes the existing body so unfinished Markdown examples cannot hide it. A second read detects metadata/body changes before writing and fails for a fresh replay; workflow runs for the same PR are serialized. GitHub does not document conditional PATCH for this endpoint, so this is not an atomic append against simultaneous human edits. Avoid description rewrites while merge reconciliation is running and inspect/replay a reported conflict.
+
+An Action success proves the GitHub closing relation was saved, not that Linear has already processed its webhook. Verify actual Done before releasing the project slot. On a failed hook, fix the reported cause and replay the same merge using `gh workflow run linear-completion.yml --ref main -f pr_number=PR_NUMBER`; GitHub merge state is checked again. If the native integration remains unavailable, use the documented completion reconciliation below rather than restarting implementation on delivered work. Closed/unmerged or wrong-destination PRs are rejected even on manual replay.
+
 Put `Closes PIC-<number>` in the PR description. Confirm the `linear-code`
 linkback points to the intended issue. This is a closing reference; a plain
 mention is not the completion contract. See [Linear's integration docs](https://linear.app/docs/github-integration).

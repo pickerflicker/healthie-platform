@@ -1,0 +1,113 @@
+name: Complete merged Linear ticket
+
+on:
+  pull_request_target:
+    types: [closed]
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: Existing merged delivery PR to reconcile
+        required: true
+        type: number
+
+permissions:
+  pull-requests: write
+
+concurrency:
+  group: linear-completion-${{ github.event.pull_request.number || inputs.pr_number }}
+  cancel-in-progress: false
+
+jobs:
+  complete:
+    if: >-
+      github.repository == 'pickerflicker/healthie-platform' &&
+      (github.event_name == 'workflow_dispatch' || github.event.pull_request.merged == true)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      # Metadata only: never check out or execute pull-request code with this token.
+      - name: Ensure the merged delivery PR closes its ticket
+        shell: python
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          import json
+          import os
+          import re
+          import urllib.request
+
+          repository = os.environ["GITHUB_REPOSITORY"]
+          if repository != "pickerflicker/healthie-platform":
+              raise SystemExit("Unexpected repository; no changes made.")
+          with open(os.environ["GITHUB_EVENT_PATH"]) as source:
+              event = json.load(source)
+          number = str(event.get("pull_request", {}).get("number") or
+                       event.get("inputs", {}).get("pr_number", ""))
+          if not re.fullmatch(r"[1-9][0-9]*", number):
+              raise SystemExit("A valid PR number is required.")
+          url = f"https://api.github.com/repos/{repository}/pulls/{number}"
+          headers = {
+              "Authorization": "Bearer " + os.environ["GH_TOKEN"],
+              "Accept": "application/vnd.github+json",
+              "Content-Type": "application/json",
+          }
+
+          def request(method, payload=None):
+              data = json.dumps(payload).encode() if payload is not None else None
+              req = urllib.request.Request(url, data=data, headers=headers, method=method)
+              with urllib.request.urlopen(req, timeout=20) as response:
+                  return json.load(response)
+
+          # Re-read GitHub instead of relying on an old webhook snapshot.
+          pr = request("GET")
+          if not (pr.get("merged") is True and pr.get("merged_at") and
+                  pr.get("merge_commit_sha") and pr.get("state") == "closed" and
+                  pr.get("base", {}).get("ref") == "main" and
+                  pr.get("base", {}).get("repo", {}).get("full_name") == repository):
+              raise SystemExit("PR is not verified merged into this repository's main; no changes made.")
+
+          # One delivery ticket per PR; derive it from the established ticket branch,
+          # never from incidental parent/dependency mentions in the description.
+          branch = pr.get("head", {}).get("ref", "")
+          match = re.match(r"^pic-([1-9][0-9]*)(?:-|$)", branch, re.IGNORECASE)
+          if not match:
+              print("No PIC delivery-ticket branch; no Linear relation changed.")
+          else:
+              ticket = "PIC-" + match.group(1)
+              body = pr.get("body") or ""
+              closing = "Closes " + ticket
+              # Refuse an ambiguous multi-ticket closure under the one-ticket contract.
+              words = ("close|closes|closed|closing|fix|fixes|fixed|fixing|resolve|resolves|"
+                       "resolved|resolving|complete|completes|completed|completing|implement|"
+                       "implements|implemented|implementing|linear issue")
+              directives = re.findall(r"(?i)\b(?:" + words +
+                                      r")\s+((?:PIC-|https://linear\.app/)[^\n]*)", body)
+              targets = {value.upper() for clause in directives
+                         for value in re.findall(r"\bPIC-[1-9][0-9]*\b", clause, re.IGNORECASE)}
+              if targets - {ticket}:
+                  raise SystemExit("Conflicting closing references; reconcile the delivery ticket before replay.")
+              # Only an actual standalone line outside fenced examples is canonical.
+              fence = None
+              linked = False
+              for line in body.splitlines():
+                  text = line.strip()
+                  if text.startswith(("```", "~~~")):
+                      marker = text[0]
+                      fence = marker if fence is None else (None if fence == marker else fence)
+                  elif fence is None and text in (closing, closing + "."):
+                      linked = True
+              if linked:
+                  print(f"Merged PR #{number} already closes {ticket}; no edit needed.")
+              else:
+                  # Prepend so even an unfinished Markdown fence cannot swallow the line.
+                  updated = closing + "\n\n" + body
+                  fresh = request("GET")
+                  if any(fresh.get(key) != pr.get(key)
+                         for key in ("body", "head", "base", "merged", "merge_commit_sha")):
+                      raise SystemExit("PR changed during reconciliation; replay using its latest metadata.")
+                  saved = request("PATCH", {"body": updated})
+                  if saved.get("body") != updated:
+                      raise SystemExit("GitHub did not confirm the closing reference.")
+                  print(f"Merged PR #{number}: ensured closing relation for {ticket}.")
+              print("Linear's existing integration applies Done; no Linear credential or model turn is used.")

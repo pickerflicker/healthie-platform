@@ -22,9 +22,10 @@ jobs:
       - uses: actions/checkout@v7
         with:
           fetch-depth: 0
-      - name: Keep generated QA evidence out of source
+      - name: Check delivery automation and QA artifact rules
         run: |
           python3 script/qa_artifact_guard_test.py
+          python3 script/linear_completion_test.py
           bin/check-qa-artifacts --base "$BASE_SHA"
         env:
           BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
