@@ -1,0 +1,6 @@
+<h1>Journal entry</h1>
+<p>Created <%= @journal_entry.created_at.to_fs(:long) %></p>
+<%= simple_format(@journal_entry.text) %>
+<%= link_to "Edit entry", edit_journal_entry_path(@journal_entry) if policy(@journal_entry).update? %>
+<%= button_to "Delete entry", @journal_entry, method: :delete if policy(@journal_entry).destroy? %>
+<p><%= link_to "My journal", journal_entries_path %></p>

@@ -1,0 +1,12 @@
+<h1>My journal</h1>
+<%= link_to "New journal entry", new_journal_entry_path if policy(JournalEntry).index? %>
+<% if @journal_entries.empty? %>
+  <p>No journal entries yet.</p>
+<% end %>
+<% @journal_entries.each do |entry| %>
+  <article>
+    <h2><%= link_to entry.created_at.to_fs(:long), entry %></h2>
+    <%= simple_format(entry.text) %>
+  </article>
+<% end %>
+<p><%= link_to "Client home", client_home_path %></p>
