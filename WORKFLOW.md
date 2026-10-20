@@ -35,13 +35,13 @@ hooks:
   timeout_ms: 600000
 agent:
   max_concurrent_agents: 1
-  max_turns: 0
+  max_turns: 4
   max_retry_backoff_ms: 300000
 codex:
   command: >-
     mise exec -- bash -lc 'eval "$(mise activate bash)";
     exec codex --strict-config --config shell_environment_policy.inherit=all
-    --config "model=\"gpt-5.6-sol\"" --config model_reasoning_effort=high
+    --config "model=\"gpt-6.1-sol\"" --config model_reasoning_effort=low
     --config agents.max_concurrent_threads_per_session=2 --config agents.max_depth=1 app-server'
   approval_policy: never
   thread_sandbox: workspace-write
@@ -81,3 +81,7 @@ Read docs/overnight-delegation.md. For PIC-274 through PIC-281 the coordinating 
 ## Local runtime handles
 
 The canonical checkout is /Users/smh/dev/healthie-platform. The gate owner is its ignored tmp/symphony/gate/owner UUID file, and state API is http://127.0.0.1:4010/api/v1/state. Operator retains runtime lifecycle ownership; do not stop/restart your own scheduler from its worker. PIC-275 starts from its operator-prepared branch and completes focused validation and documentation. Later tickets start from merged main. Use `mise exec --` with native Ruby/Node tools; Docker CLI is /Applications/Docker.app/Contents/Resources/bin/docker. Private git/gh and existing LINEAR_API_KEY authentication are inherited. Never print credential contents.
+
+## Execution budget
+
+Developer and QA both use gpt-6.1-sol at low effort, explicitly authorized by Steven. QA inherits that model and effort; do not override either. Use forked minimal context for QA: issue acceptance, relevant diff, test commands and evidence assignment, rather than the full planning history. Read only documents needed for the current slice; reuse prior passing evidence when source is unchanged. On repeated transport/auth failures, preserve the checkpoint and return control to the operator instead of calling the model in a loop. Four continuation turns or two consecutive failed worker sessions persistently pause dispatch for operator recovery. A runtime checkpoint is not a passed QA result.

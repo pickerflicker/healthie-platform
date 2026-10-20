@@ -45,3 +45,7 @@ The focused check also enters the project from a cold login shell, activates mis
 `bin/symphony start|status|stop` controls the native process and records its PID under ignored tmp/symphony. Dashboard/state API: http://127.0.0.1:4010/ and /api/v1/state. Logs are under tmp/symphony. `pause` and `resume` persistently close/open **new dispatch**; stop the process as well to interrupt existing execution.
 
 The gate polls Linear for project review/blocked/active ownership, persists the selected issue UUID atomically, and releases it only after Done. Feedback Todo can only resume that UUID; canceled/missing owners fail closed for operator resolution. Blockers must explicitly be Done, including before resuming In Progress. The pause marker and owner survive runtime restart. Tracker errors fail closed. A separate operator reviews QA/CI and merges under the scoped overnight delegation.
+
+## Token and retry bounds
+
+Both roles use GPT-6.1 Sol at low effort. A completed notification with failed/interrupted status is a failure, never a success continuation. One automatic recovery is allowed; a second consecutive worker failure writes a persistent dispatch pause and a concise `tmp/symphony/gate/checkpoint.json`. Successful turns clear consecutive failures. Four continuation turns without leaving active state also pause dispatch. The operator diagnoses the checkpoint, fixes the underlying cause and uses `bin/symphony resume`; it must not blindly clear an unchanged checkpoint on every heartbeat. Ticket ownership and preview remain intact.

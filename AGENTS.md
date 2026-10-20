@@ -27,3 +27,5 @@ Single-context layout: `GLOSSARY.md` and `docs/adr/`. Before domain modeling, sp
 ## Current scoped delegation
 
 Read `docs/overnight-delegation.md` before queueing, reviewing or merging PIC-274 through PIC-281. Steven explicitly delegated those actions to the coordinating operator for this batch; this overrides the normal Steven-only approval wording. Independent QA and passing acceptance checks remain required.
+
+Developer and QA: `gpt-6.1-sol`, low reasoning effort (Steven’s explicit choice). Keep QA context focused on the current issue and changed behavior.

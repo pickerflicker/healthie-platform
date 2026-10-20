@@ -10,4 +10,5 @@ mkdir -p "$runtime"
 rsync -a "$source_dir/" "$runtime/"
 python3 script/symphony/install_gate.py "$runtime"
 (cd "$runtime" && mise trust && mise install && mise exec -- mix compile --force && mise exec -- mix escript.build)
+(cd "$runtime" && mise exec -- mix test test/symphony_elixir/healthie_retry_protocol_test.exs)
 bin/check-symphony
