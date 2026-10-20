@@ -49,6 +49,6 @@ group :development do
 end
 
 gem "pg", "~> 1.6"
-gem "redis", "~> 5.4"
+gem "redis", "~> 6.0"
 gem "devise", "~> 4.9"
 gem "pundit", "~> 2.5"
