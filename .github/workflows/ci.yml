@@ -32,7 +32,7 @@ jobs:
       - uses: ruby/setup-ruby@v1
         with:
           bundler-cache: true
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: 22
           cache: npm
@@ -45,7 +45,7 @@ jobs:
       - run: bin/acceptance
         env:
           CI: true
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: always()
         with:
           name: qa-evidence
