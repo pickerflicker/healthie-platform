@@ -17,6 +17,8 @@ The inserted line precedes the existing body so unfinished Markdown examples can
 
 An Action success proves the GitHub closing relation was saved, not that Linear has already processed its webhook. Verify actual Done before releasing the project slot. On a failed hook, fix the reported cause and replay the same merge using `gh workflow run linear-completion.yml --ref main -f pr_number=PR_NUMBER`; GitHub merge state is checked again. If the native integration remains unavailable, use the documented completion reconciliation below rather than restarting implementation on delivered work. Closed/unmerged or wrong-destination PRs are rejected even on manual replay.
 
+Rollout verification (2026-10-20): twelve tests execute the actual workflow step with controlled GitHub responses, covering the `Refs` regression, idempotence, unmerged/wrong-destination refusals, conflicting closures, Markdown fences and observed concurrent edits. [Live replay on merged PR #5](https://github.com/pickerflicker/healthie-platform/actions/runs/39474350330) succeeded with the workflow's built-in GitHub token and wrote the canonical line. PIC-277 remained Done with its earlier completion timestamp unchanged; Symphony stayed idle with no owner/running/retrying worker. This verifies live permissions and replay behavior, rather than claiming a new issue-state transition or a newly observed merge event.
+
 Put `Closes PIC-<number>` in the PR description. Confirm the `linear-code`
 linkback points to the intended issue. This is a closing reference; a plain
 mention is not the completion contract. See [Linear's integration docs](https://linear.app/docs/github-integration).
