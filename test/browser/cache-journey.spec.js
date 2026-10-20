@@ -37,6 +37,7 @@ test('final seeded journey: warm providers, journal CRUD, removal privacy and fr
   await page.getByRole('link', { name: 'Edit entry', exact: true }).click();
   await page.getByLabel('Entry text').fill('Cache journey private journal edited');
   await page.getByRole('button', { name: 'Save entry', exact: true }).click();
+  await expect(page).toHaveURL(entryURL);
   await page.reload();
   await expect(page.locator('main')).toContainText('Cache journey private journal edited');
   await signOut(page);
