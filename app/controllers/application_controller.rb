@@ -9,6 +9,10 @@ class ApplicationController < ActionController::Base
     render plain: "Access denied. This page is not available for your account role.", status: :forbidden
   end
 
+  rescue_from ActiveRecord::RecordNotFound do
+    render "errors/not_found", formats: [ :html ], status: :not_found
+  end
+
   private
 
   def authorization_exempt?

@@ -7,7 +7,13 @@
     <tbody>
       <% @enrollments.each do |enrollment| %>
         <tr>
-          <td><%= current_user.client? ? enrollment.provider.name : enrollment.client.name %></td>
+          <td>
+            <% if current_user.client? %>
+              <%= enrollment.provider.name %>
+            <% else %>
+              <%= link_to enrollment.client.name, client_journal_entries_path(enrollment.client) %>
+            <% end %>
+          </td>
           <td><%= enrollment.plan.humanize %></td>
           <% if policy(enrollment).destroy? %>
             <td><%= button_to "Remove #{enrollment.provider.name}", enrollment_path(enrollment), method: :delete %></td>
@@ -16,6 +22,10 @@
       <% end %>
     </tbody>
   </table>
+<% end %>
+
+<% if current_user.provider? %>
+  <p><%= link_to "Combined journal feed", journal_entries_path %></p>
 <% end %>
 
 <% if @enrollment && policy(@enrollment).create? %>
