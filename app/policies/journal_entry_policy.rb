@@ -1,6 +1,6 @@
 class JournalEntryPolicy < ApplicationPolicy
   def index?
-    user&.client? || false
+    user&.client? || user&.provider? || false
   end
 
   def new?
@@ -8,11 +8,11 @@ class JournalEntryPolicy < ApplicationPolicy
   end
 
   def create?
-    user&.client? && record.client_id == user.client.id
+    (user&.client? && record.client_id == user.client.id) || false
   end
 
   def show?
-    create?
+    create? || (user&.provider? && user.provider.enrollments.exists?(client_id: record.client_id)) || false
   end
 
   def edit?
@@ -29,7 +29,13 @@ class JournalEntryPolicy < ApplicationPolicy
 
   class Scope < ApplicationPolicy::Scope
     def resolve
-      user&.client? ? scope.where(client_id: user.client.id) : scope.none
+      if user&.client?
+        scope.where(client_id: user.client.id)
+      elsif user&.provider?
+        scope.where(client_id: user.provider.enrollments.select(:client_id))
+      else
+        scope.none
+      end
     end
   end
 end

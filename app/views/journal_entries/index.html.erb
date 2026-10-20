@@ -1,12 +1,18 @@
-<h1>My journal</h1>
-<%= link_to "New journal entry", new_journal_entry_path if policy(JournalEntry).index? %>
+<h1><%= @client ? "#{@client.name}'s journal" : (current_user.provider? ? "Combined journal feed" : "My journal") %></h1>
+<% if current_user.provider? %><p>Read-only journal access for your current clients.</p><% end %>
+<%= link_to "New journal entry", new_journal_entry_path if policy(JournalEntry.new(client: current_user.client)).create? %>
 <% if @journal_entries.empty? %>
   <p>No journal entries yet.</p>
 <% end %>
 <% @journal_entries.each do |entry| %>
   <article>
+    <% if current_user.provider? %><p><%= link_to entry.client.name, client_journal_entries_path(entry.client) %></p><% end %>
     <h2><%= link_to entry.created_at.to_fs(:long), entry %></h2>
     <%= simple_format(entry.text) %>
   </article>
 <% end %>
-<p><%= link_to "Client home", client_home_path %></p>
+<% if current_user.provider? %>
+  <p><%= link_to "My clients", enrollments_path %> · <%= link_to "Combined journal feed", journal_entries_path %></p>
+<% else %>
+  <p><%= link_to "Client home", client_home_path %></p>
+<% end %>
