@@ -7,16 +7,18 @@ Open `mise exec -- bin/rails console` and run all four employer-required queries
 provider = User.find_by!(email: "provider@healthie.example").provider
 client = User.find_by!(email: "client@healthie.example").client
 
-provider.clients.order(:id)
-client.providers.order(:id)
+provider.clients.order("enrollments.created_at DESC", "enrollments.id DESC").preload(:user)
+client.providers.order("enrollments.created_at DESC", "enrollments.id DESC").preload(:user)
 client.journal_entries.order(created_at: :desc, id: :desc)
 provider.journal_entries.order(created_at: :desc, id: :desc)
 ```
 
 Both journal listings use creation time descending, then ID descending. Editing
-text leaves the creation time unchanged. Relationship lists use ID ascending for
-repeatable browsing; their ordering is a project convention. These are ordinary
-ActiveRecord relations, directly runnable without an HTTP session. They are not
+text leaves the creation time unchanged. Relationship lists use `enrollments.created_at DESC, enrollments.id DESC`,
+independent of profile age or edits. Removing and re-adding moves the relationship
+to its new enrollment position. These explicit list queries preload User identities;
+the associations themselves remain unscoped. These are ordinary ActiveRecord
+relations, directly runnable without an HTTP session. They are not
 authorization APIs: a console operator selects the profile explicitly. Web reads
 start with Pundit scopes and independently authorize records. They consult current
 enrollments, so adding a provider exposes historical entries and removing one
@@ -26,7 +28,7 @@ not restrict journal visibility. Providers have read-only access.
 For relationship plans, use the join records:
 
 ```ruby
-client.enrollments.includes(provider: :user).order(:id).map { |e| [e.provider.name, e.plan] }
+client.enrollments.preload(provider: :user).order(created_at: :desc, id: :desc).map { |e| [e.provider.name, e.plan] }
 ```
 
 ## Intentional dataset
@@ -37,10 +39,10 @@ browsing data. Counts below describe a clean seed baseline.
 
 | Login | Profile and expected query results |
 | --- | --- |
-| provider | Morgan Patel: Alex Rivera (Basic), Sam Chen (Premium); four journal entries |
+| provider | Morgan Patel: Sam Chen (Premium), Alex Rivera (Basic); four journal entries |
 | second-provider | Taylor Reed: Alex (Premium); Alex's three entries, excluding Sam |
 | empty-provider | Casey Park: no clients or feed entries |
-| client | Alex Rivera: Morgan and Taylor; three entries, with two tied creation times |
+| client | Alex Rivera: Taylor then Morgan; three entries, with two tied creation times |
 | unrelated-client | Sam Chen: Morgan; one entry, inaccessible to Taylor |
 | empty-client | Jamie Brooks: no providers or entries |
 
@@ -78,13 +80,13 @@ The tests also exercise tied timestamps across different clients.
 ## Provider-list cache
 
 `client.provider_list` returns serializable hashes with enrollment/provider IDs,
-provider name and plan, ordered by enrollment ID. The client **My providers** page
+provider name and plan, ordered by enrollment creation time then ID, both descending. The client **My providers** page
 uses it after Pundit scopes the client; `client.providers` remains a raw
 ActiveRecord association. The provider directory dropdown is also queried live.
 
 Redis keys are `healthie:<environment>:clients/<client ID>/provider-list/v1`, with
 an explicit one-minute expiry on each provider-list write. The first read fetches
-the joined result; subsequent reads reuse it. Enrollment commits (including plan updates) delete
+the enrollment result with a joined scalar projection; subsequent reads reuse it. Enrollment commits (including plan updates) delete
 affected client keys. Provider name commits delete keys for all enrolled clients.
 Email is not cached. The list uses ordinary `Rails.cache.fetch`; the application
 reads it outside write transactions. Rolled-back relationship/name writes do not
@@ -112,7 +114,7 @@ source script/native_bundle_env
 mise exec -- bin/rails test test/integration/provider_list_cache_test.rb
 ```
 
-The focused checks observe Rails cache notifications, count the actual joined SQL,
+The focused checks observe Rails cache notifications, count the actual enrollment SQL,
 verify Redis key presence, and exercise committed changes and rollbacks. They also
 deliberately restore stale display data after removal and verify policy, direct
 journal and feed denial. Test cache clearing leaves development keys intact.
