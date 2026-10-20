@@ -1,6 +1,6 @@
 # PIC-277 independent QA
 
-**Result: PASS — no blocking findings.** Tested application commit `e92ae3c4ab801a866cf979377a4bdd8928566480`, based on `28dc8a1ae7dccffecdf21d6622eea538df93794c`, on 2026-10-20. QA thread: `01a15a29-5299-7d63-9dd1-6e336fa1f406` (independent GPT-6.1 Sol / low). QA added browser regression coverage and this evidence only; no application-source edits.
+**Result: PASS — no blocking findings.** Tested commit `99532a3c76d258cf9854932abd8da7465f0ac8df` (application source unchanged from `e92ae3c4ab801a866cf979377a4bdd8928566480`), based on `28dc8a1ae7dccffecdf21d6622eea538df93794c`, on 2026-10-20. QA thread: `01a15a29-5299-7d63-9dd1-6e336fa1f406` (independent GPT-6.1 Sol / low). QA added browser regression coverage and this evidence only; no application-source edits.
 
 ## Acceptance evidence
 
@@ -16,12 +16,17 @@
 
 Headless Chromium follows Steven's 2026-10-20 policy, which supersedes the ticket's older headed wording.
 
+## Repair cycle 1: seeded test database
+
+CI exposed a test setup assumption: model tests expected an empty database, while `db:prepare` can load seeds. Developer added transactional model-test setup to remove existing test users; no application source changed. Independent QA reproduced the seeded starting condition with `RAILS_ENV=test bin/rails db:seed`, then passed the full check and browser suite on the tested commit above. The local seeded-database failure is resolved; hosted CI status is tracked separately on the PR.
+
 ## Commands and results
 
 Using native tooling with `BUNDLE_PATH="$PWD/tmp/bundle"`:
 
 - `RAILS_ENV=test mise exec -- bin/rails db:prepare db:seed` — success.
-- `RAILS_ENV=test mise exec -- bin/rails test test/models/account_test.rb test/integration/authentication_test.rb` — **11 tests, 99 assertions, zero failures/errors/skips**.
+- Initial application validation: focused account/authentication suite — **11 tests, 99 assertions**, no failures/errors/skips.
+- Repair validation: `RAILS_ENV=test mise exec -- bin/rails db:seed` followed by `RAILS_ENV=test RUBOCOP_CACHE_ROOT="$PWD/tmp/rubocop" mise exec -- bin/check` — eager loading passes, **38 Ruby files without lint offenses; 12 tests, 104 assertions, zero failures/errors/skips**.
 - `env -u CI HEALTHIE_QA_BROWSER_WS_FILE=/Users/smh/dev/healthie-platform/tmp/symphony/browser-ws mise exec -- bin/acceptance` — **2 tests passed**, Chromium headless against isolated test app 3100, via operator's local browser host. Endpoint contents were not exposed.
 - Development Rails runner before/after: same seeded account IDs/roles and profile counts; cache sentinel `preserved` survived test suite. `curl` review-preview health — HTTP 200.
 
@@ -29,7 +34,7 @@ Nonblocking tooling output: Bundler falls back to a temporary writable home; Dev
 
 ## Actual browser screenshots
 
-All screenshots below were captured by Playwright during this run. QA visually inspected both role homes, login, invalid login and denied states; layout is readable and both account identities are correct.
+All screenshots below were refreshed by Playwright during the repair-cycle validation on `99532a3c76d258cf9854932abd8da7465f0ac8df`. QA visually inspected both role homes, login, invalid login and denied states; layout is readable and both account identities are correct.
 
 - [Anonymous sign-in](sign-in.png)
 - [Invalid credentials](invalid-login.png)
