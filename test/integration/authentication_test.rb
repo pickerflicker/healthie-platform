@@ -13,7 +13,7 @@ class AuthenticationTest < ActionDispatch::IntegrationTest
   test "invalid login shows meaningful failure" do
     post user_session_path, params: { user: { email: "client@healthie.example", password: "wrong" } }
     assert_response :unprocessable_entity
-    assert_match "Invalid Email or password", response.body
+    assert_select '[role="alert"]', text: /\AInvalid email or password\.\z/i
   end
 
   test "both roles sign in navigate reject opposite access and sign out" do

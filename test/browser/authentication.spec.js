@@ -10,7 +10,7 @@ test('seeded identities, denied access, tampering and logout', async ({ page }, 
   await page.getByLabel('Email').fill('client@healthie.example');
   await page.getByLabel('Password', { exact: true }).fill('incorrect-password');
   await page.getByRole('button', { name: 'Sign in', exact: true }).click();
-  await expect(page.getByRole('alert')).toContainText('Invalid Email or password');
+  await expect(page.getByRole('alert')).toHaveText(/^Invalid email or password\.$/i);
   await page.screenshot({ path: evidence('invalid-login.png'), fullPage: true });
   for (const [role, name] of [['provider', 'Morgan Patel'], ['client', 'Alex Rivera']]) {
     await page.goto('/users/sign_in');

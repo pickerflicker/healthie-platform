@@ -50,5 +50,5 @@ end
 
 gem "pg", "~> 1.6"
 gem "redis", "~> 6.0"
-gem "devise", "~> 4.9"
+gem "devise", "~> 5.0"
 gem "pundit", "~> 2.5"
