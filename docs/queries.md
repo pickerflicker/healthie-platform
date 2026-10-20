@@ -7,8 +7,8 @@ Open `mise exec -- bin/rails console` and run all four employer-required queries
 provider = User.find_by!(email: "provider@healthie.example").provider
 client = User.find_by!(email: "client@healthie.example").client
 
-provider.clients
-client.providers
+provider.clients.order("enrollments.created_at DESC", "enrollments.id DESC").preload(:user)
+client.providers.order("enrollments.created_at DESC", "enrollments.id DESC").preload(:user)
 client.journal_entries.order(created_at: :desc, id: :desc)
 provider.journal_entries.order(created_at: :desc, id: :desc)
 ```
@@ -16,8 +16,9 @@ provider.journal_entries.order(created_at: :desc, id: :desc)
 Both journal listings use creation time descending, then ID descending. Editing
 text leaves the creation time unchanged. Relationship lists use `enrollments.created_at DESC, enrollments.id DESC`,
 independent of profile age or edits. Removing and re-adding moves the relationship
-to its new enrollment position. Both association queries preload User identities. These are ordinary
-ActiveRecord relations, directly runnable without an HTTP session. They are not
+to its new enrollment position. These explicit list queries preload User identities;
+the associations themselves remain unscoped. These are ordinary ActiveRecord
+relations, directly runnable without an HTTP session. They are not
 authorization APIs: a console operator selects the profile explicitly. Web reads
 start with Pundit scopes and independently authorize records. They consult current
 enrollments, so adding a provider exposes historical entries and removing one
@@ -27,7 +28,7 @@ not restrict journal visibility. Providers have read-only access.
 For relationship plans, use the join records:
 
 ```ruby
-client.enrollments.preload(provider: :user).newest_first.map { |e| [e.provider.name, e.plan] }
+client.enrollments.preload(provider: :user).order(created_at: :desc, id: :desc).map { |e| [e.provider.name, e.plan] }
 ```
 
 ## Intentional dataset

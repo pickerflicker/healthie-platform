@@ -1,6 +1,6 @@
 class Client < ApplicationRecord
   has_many :enrollments, dependent: :destroy
-  has_many :providers, -> { order("enrollments.created_at DESC", "enrollments.id DESC").preload(:user) }, through: :enrollments
+  has_many :providers, through: :enrollments
   has_many :journal_entries, dependent: :destroy
   belongs_to :user, inverse_of: :client
   delegate :name, :email, to: :user
@@ -20,7 +20,7 @@ class Client < ApplicationRecord
   private
 
   def query_provider_list
-    enrollments.newest_first.preload(provider: :user).map do |enrollment|
+    enrollments.order(created_at: :desc, id: :desc).preload(provider: :user).map do |enrollment|
       { enrollment_id: enrollment.id, provider_id: enrollment.provider_id,
         name: enrollment.provider.name, plan: enrollment.plan }
     end

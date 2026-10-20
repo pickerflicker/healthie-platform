@@ -19,16 +19,16 @@ class EnrollmentOrderTest < ActionDispatch::IntegrationTest
     @users.reverse_each(&:destroy!)
   end
 
-  test "both associations and pages order relationships rather than profiles with deterministic ties" do
+  test "explicit list queries and pages order relationships rather than profiles with deterministic ties" do
     expected_clients = [ @clients[1].id, @clients[0].id, @clients[2].id ]
     expected_providers = [ @providers[1].id, @providers[0].id, @providers[2].id ]
-    assert_equal expected_clients, @provider.clients.pluck(:id)
-    assert_equal expected_providers, @client.providers.pluck(:id)
+    assert_equal expected_clients, provider_clients.pluck(:id)
+    assert_equal expected_providers, client_providers.pluck(:id)
     assert_equal expected_providers, @client.provider_list.pluck(:provider_id)
     assert_equal expected_providers, @client.provider_list.pluck(:provider_id), "warm cache parity"
     @providers[2].user.update!(name: "Edited old relationship")
     @clients[2].user.update!(name: "Edited client")
-    assert_equal expected_clients, @provider.clients.pluck(:id)
+    assert_equal expected_clients, provider_clients.pluck(:id)
     assert_equal expected_providers, @client.provider_list.pluck(:provider_id)
 
     [ [ @provider.user, @clients.values_at(1, 0, 2).map(&:name) ],
@@ -45,7 +45,7 @@ class EnrollmentOrderTest < ActionDispatch::IntegrationTest
     @reverse[2].destroy!
     @provider.enrollments.create!(client: @clients[2])
     @client.enrollments.create!(provider: @providers[2])
-    assert_equal expected_clients.rotate(-1), @provider.clients.pluck(:id)
+    assert_equal expected_clients.rotate(-1), provider_clients.pluck(:id)
     assert_equal expected_providers.rotate(-1), @client.provider_list.pluck(:provider_id)
     empty = account("client").client
     assert_empty empty.providers
@@ -61,8 +61,8 @@ class EnrollmentOrderTest < ActionDispatch::IntegrationTest
 
   test "uncached lists preload names and emails and cold and warm display caches bound User queries" do
     ActiveRecord::Base.uncached do
-      [ @provider.clients, @client.providers,
-        EnrollmentPolicy::Scope.new(@provider.user, Enrollment.all).resolve.preload(client: :user).newest_first ].each do |relation|
+      [ provider_clients, client_providers,
+        EnrollmentPolicy::Scope.new(@provider.user, Enrollment.all).resolve.preload(client: :user).order(created_at: :desc, id: :desc) ].each do |relation|
         rows = relation.to_a
         queries = user_selects do
           rows.each do |row|
@@ -82,6 +82,15 @@ class EnrollmentOrderTest < ActionDispatch::IntegrationTest
   end
 
   private
+
+  # Match the explicit console queries; request assertions above exercise the controller.
+  def provider_clients
+    @provider.clients.order("enrollments.created_at DESC", "enrollments.id DESC").preload(:user)
+  end
+
+  def client_providers
+    @client.providers.order("enrollments.created_at DESC", "enrollments.id DESC").preload(:user)
+  end
 
   def user_selects
     queries = []
