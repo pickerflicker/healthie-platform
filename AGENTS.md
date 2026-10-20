@@ -8,6 +8,7 @@ The execution team remains Developer (parent and sole application implementation
 
 - Before planning or changing scope, read [CONTEXT.md](CONTEXT.md) for accepted product decisions and interview boundaries.
 - Before implementation, QA or reviewing delivery evidence, read [docs/agent-team.md](docs/agent-team.md). It owns role responsibilities, delegation, validation and reporting requirements.
+- Before resuming a ticket or reviewing a feedback repair, read [docs/agents/pr-feedback.md](docs/agents/pr-feedback.md). PR comments, submitted reviews and inline threads are the review-feedback source.
 - Before changing or reviewing authorization, record lookups or ownership parameters, read [docs/agents/authorization.md](docs/agents/authorization.md) for Pundit conventions and required denial checks.
 - Before generating, publishing or reviewing QA evidence, read [docs/agents/qa-evidence.md](docs/agents/qa-evidence.md). Reports and uploaded screenshots belong in one PR comment; generated evidence must stay out of Git.
 - Before publishing or fetching tracker work, read [docs/agents/issue-tracker.md](docs/agents/issue-tracker.md) for the existing Linear project and publishing conventions.

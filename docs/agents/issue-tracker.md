@@ -29,4 +29,6 @@ Use GitHub for code and PRs, and Linear for specs, issues, dependencies and stat
 
 Read the issue's complete description, comments, parent and blockers. Follow [../agent-team.md](../agent-team.md) for Developer/QA execution, [triage-labels.md](triage-labels.md) for lifecycle and [../overnight-delegation.md](../overnight-delegation.md) for current authority. Symphony's tool contract is in [../../WORKFLOW.md](../../WORKFLOW.md).
 
+On resume, read the existing PR's review feedback under [pr-feedback.md](pr-feedback.md); Linear history is context and need not contain a copy of Steven's PR feedback.
+
 Before activating tickets, complete the runtime and gate activation checks in [../operations.md](../operations.md).
