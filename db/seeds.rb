@@ -1,7 +1,8 @@
 abort "Seeds are only for local development/test" unless Rails.env.development? || Rails.env.test?
 
 User.transaction do
-  [ [ "provider", "Morgan Patel", "provider" ], [ "client", "Alex Rivera", "client" ],
+  [ [ "provider", "Morgan Patel", "provider" ], [ "provider", "Taylor Reed", "second-provider" ],
+    [ "provider", "Casey Park", "empty-provider" ], [ "client", "Alex Rivera", "client" ],
     [ "client", "Sam Chen", "unrelated-client" ], [ "client", "Jamie Brooks", "empty-client" ] ].each do |role, name, login|
     email = "#{login}@healthie.example"
     user = User.find_by(email: email)
@@ -11,6 +12,15 @@ User.transaction do
     else
       User.create_account!(name: name, email: email, password: "Healthie-demo-2026", role: role)
     end
+  end
+end
+
+Enrollment.transaction do
+  [ [ "provider", "client", "basic" ], [ "second-provider", "client", "premium" ],
+    [ "provider", "unrelated-client", "premium" ] ].each do |provider_login, client_login, plan|
+    provider = User.find_by!(email: "#{provider_login}@healthie.example").provider
+    client = User.find_by!(email: "#{client_login}@healthie.example").client
+    Enrollment.find_or_create_by!(provider: provider, client: client) { |enrollment| enrollment.plan = plan }
   end
 end
 

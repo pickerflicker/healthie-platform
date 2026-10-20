@@ -15,3 +15,6 @@ main { margin-top: 3rem; background: white; padding: 2rem; border-radius: 1rem; 
 input { padding: .6rem; max-width: 100%; }
 button, input[type=submit] { padding: .6rem 1rem; cursor: pointer; }
 a { color: #155c58; }
+table { border-collapse: collapse; }
+th, td { padding: .5rem 1rem .5rem 0; text-align: left; }
+select { padding: .4rem; }

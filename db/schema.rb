@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_20_184000) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_20_192000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -19,6 +19,17 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_20_184000) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["user_id"], name: "index_clients_on_user_id", unique: true
+  end
+
+  create_table "enrollments", force: :cascade do |t|
+    t.bigint "provider_id", null: false
+    t.bigint "client_id", null: false
+    t.string "plan", default: "basic", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["client_id"], name: "index_enrollments_on_client_id"
+    t.index ["provider_id", "client_id"], name: "index_enrollments_on_provider_id_and_client_id", unique: true
+    t.check_constraint "plan::text = ANY (ARRAY['basic'::character varying, 'premium'::character varying]::text[])", name: "enrollments_plan_valid"
   end
 
   create_table "journal_entries", force: :cascade do |t|
@@ -48,6 +59,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_20_184000) do
   end
 
   add_foreign_key "clients", "users"
+  add_foreign_key "enrollments", "clients"
+  add_foreign_key "enrollments", "providers"
   add_foreign_key "journal_entries", "clients"
   add_foreign_key "providers", "users"
 end

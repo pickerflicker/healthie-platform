@@ -1,4 +1,6 @@
 class Provider < ApplicationRecord
+  has_many :enrollments, dependent: :destroy
+  has_many :clients, through: :enrollments
   belongs_to :user, inverse_of: :provider
   delegate :name, :email, to: :user
   validates :user_id, uniqueness: true

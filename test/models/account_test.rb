@@ -78,9 +78,9 @@ class AccountTest < ActiveSupport::TestCase
     user.update!(name: "Changed", password: "different-password")
     Rails.application.load_seed
     assert_equal ids, User.order(:email).pluck(:id)
-    assert_equal 4, User.count
+    assert_equal 6, User.count
     assert_equal 3, Client.count
-    assert_equal 1, Provider.count
+    assert_equal 3, Provider.count
     assert_equal "Alex Rivera", user.reload.name
     assert user.valid_password?("Healthie-demo-2026")
   end
