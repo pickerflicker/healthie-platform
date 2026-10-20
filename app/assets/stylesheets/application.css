@@ -8,3 +8,10 @@
  *
  * Consider organizing styles into separate files for maintainability.
  */
+
+body { font-family: system-ui, sans-serif; color: #163334; background: #f5f8f7; margin: 0 auto; max-width: 60rem; padding: 2rem; }
+header, nav { display: flex; align-items: center; gap: 1.5rem; justify-content: space-between; }
+main { margin-top: 3rem; background: white; padding: 2rem; border-radius: 1rem; }
+input { padding: .6rem; max-width: 100%; }
+button, input[type=submit] { padding: .6rem 1rem; cursor: pointer; }
+a { color: #155c58; }

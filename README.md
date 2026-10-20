@@ -1,18 +1,22 @@
 # healthie-platform
 
-Clean Rails 8.1.4 / Ruby 3.4.11 interview app. Product brainstorming is next.
+Rails 8.1 / Ruby 3.4 interview app. Local Docker Compose runs Rails, PostgreSQL and Redis; native mise tooling runs focused checks and Playwright.
 
 ```sh
 mise trust
 mise install
 mise exec -- bin/bootstrap
+bin/stack up
+mise exec -- bin/rails db:seed
 mise exec -- bin/check
-mise exec -- bin/preview
-# In another terminal:
-bin/acceptance
+RAILS_ENV=test mise exec -- bin/rails db:seed
+mise exec -- bin/acceptance
 ```
 
-Preview: http://127.0.0.1:3000. Stop with Ctrl-C. Set PORT to avoid conflicts.
-No database is needed yet. Active Record and persistence are deferred until the product is defined; use shared Postgres when added.
+Review preview: http://127.0.0.1:3000. `bin/preview` binds the shared web service to this checkout. `bin/stack stop` preserves database storage. Tests use `healthie_test` and the `healthie:test` Redis namespace; development browsing data is retained.
 
-[Linear control plane](https://linear.app/pickerflicker/project/healthie-platform-c6cbdb1032a3). See docs/agent-team.md for the Developer + QA pair and docs/operations.md for Symphony controls.
+Sign in with `provider@healthie.example` (Morgan Patel) or `client@healthie.example` (Alex Rivera). Both use the local fixture password `Healthie-demo-2026`. Seeds restore those intentional identities/passwords without duplicating accounts; they do not remove unrelated records. No signup or password recovery is exposed. Role homes are intentionally minimal for this slice.
+
+`User.create_account!(name:, email:, password:, role:)` creates an account and matching profile atomically. User owns identity and a required string role; Provider/Client delegate identity. Model validation enforces the matching profile, immutable role/account association and retained required profile. Database constraints enforce required/unique profile foreign keys and valid roles. Direct SQL/bulk writes bypass cross-table model validation and are outside the normal account creation path.
+
+[Linear project](https://linear.app/pickerflicker/project/healthie-platform-c6cbdb1032a3). See [operations](docs/operations.md) and [Developer/QA workflow](docs/agent-team.md).
