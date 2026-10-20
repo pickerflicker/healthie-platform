@@ -1,6 +1,9 @@
 require "test_helper"
 
 class AccountTest < ActiveSupport::TestCase
+  # Each model example owns its test rows; db:prepare may already load seeds.
+  setup { User.destroy_all }
+
   def account(role = "client", email = "alex@example.com")
     User.create_account!(name: "Alex", email: email, password: "test-password-123", role: role)
   end
