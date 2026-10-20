@@ -75,23 +75,23 @@ class JournalEntriesTest < ActionDispatch::IntegrationTest
     assert_not_equal "stolen", @entry.reload.text
   end
 
-  test "providers cannot list create read edit update or delete client journals" do
+  test "current providers can list and read but cannot create edit update or delete client journals" do
     login(User.find_by!(email: "provider@healthie.example"))
     get journal_entries_path
-    assert_response :forbidden
+    assert_response :success
     get new_journal_entry_path
     assert_response :forbidden
     assert_no_difference "JournalEntry.count" do
       post journal_entries_path, params: { journal_entry: { text: "forged", client_id: @owner.client.id } }
       assert_response :forbidden
       get journal_entry_path(@entry)
-      assert_response :not_found
+      assert_response :success
       get edit_journal_entry_path(@entry)
-      assert_response :not_found
+      assert_response :forbidden
       patch journal_entry_path(@entry), params: { journal_entry: { text: "forged" } }
-      assert_response :not_found
+      assert_response :forbidden
       delete journal_entry_path(@entry)
-      assert_response :not_found
+      assert_response :forbidden
     end
     assert_not_equal "forged", @entry.reload.text
   end
@@ -114,13 +114,17 @@ class JournalEntriesTest < ActionDispatch::IntegrationTest
 
   test "instance policies independently enforce ownership and role" do
     provider = User.find_by!(email: "provider@healthie.example")
-    %i[show? edit? update? destroy? create? new?].each do |action|
+    assert JournalEntryPolicy.new(@owner, @entry).show?
+    assert JournalEntryPolicy.new(provider, @entry).show?
+    assert_not JournalEntryPolicy.new(@other, @entry).show?
+    assert_not JournalEntryPolicy.new(nil, @entry).show?
+    %i[edit? update? destroy? create? new?].each do |action|
       assert JournalEntryPolicy.new(@owner, @entry).public_send(action)
       [ @other, provider, nil ].each do |user|
         assert_not JournalEntryPolicy.new(user, @entry).public_send(action)
       end
     end
     assert_equal @owner.client.journal_entries.order(:id).pluck(:id), JournalEntryPolicy::Scope.new(@owner, JournalEntry.all).resolve.order(:id).pluck(:id)
-    assert_empty JournalEntryPolicy::Scope.new(provider, JournalEntry.all).resolve
+    assert_equal JournalEntry.order(:id).pluck(:id), JournalEntryPolicy::Scope.new(provider, JournalEntry.all).resolve.order(:id).pluck(:id)
   end
 end

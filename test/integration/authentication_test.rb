@@ -41,12 +41,12 @@ class AuthenticationTest < ActionDispatch::IntegrationTest
     assert_equal %w[create destroy new], routes.uniq.sort
   end
 
-  test "profile scopes include only the signed in user's matching profile" do
+  test "profile scopes include own profile and current provider clients only" do
     provider = User.find_by!(role: "provider")
     client = User.find_by!(role: "client")
     other = User.create_account!(name: "Other", email: "other@example.com", password: "test-password-123", role: "client")
     assert_equal [ client.client ], ClientPolicy::Scope.new(client, Client.all).resolve.to_a
-    assert_empty ClientPolicy::Scope.new(provider, Client.all).resolve
+    assert_equal provider.provider.clients.order(:id).pluck(:id), ClientPolicy::Scope.new(provider, Client.all).resolve.order(:id).pluck(:id)
     assert_equal [ provider.provider ], ProviderPolicy::Scope.new(provider, Provider.all).resolve.to_a
     assert_empty ProviderPolicy::Scope.new(client, Provider.all).resolve
     assert_not_includes ClientPolicy::Scope.new(client, Client.all).resolve, other.client
@@ -60,7 +60,8 @@ class AuthenticationTest < ActionDispatch::IntegrationTest
     assert ClientPolicy.new(client, client.client).show?
     assert_not ClientPolicy.new(client, other.client).show?
     assert_not ClientPolicy.new(other, client.client).show?
-    assert_not ClientPolicy.new(provider, client.client).show?
+    assert ClientPolicy.new(provider, client.client).show?
+    assert_not ClientPolicy.new(provider, other.client).show?
     assert_not ClientPolicy.new(nil, client.client).show?
   end
 
