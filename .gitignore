@@ -34,3 +34,7 @@
 node_modules/
 playwright-report/
 test-results/
+
+# Python helpers used by the agent launcher.
+__pycache__/
+*.py[cod]

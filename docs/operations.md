@@ -2,13 +2,13 @@
 
 Canonical checkout: `/Users/smh/dev/healthie-platform`.
 Code/PR repository: https://github.com/pickerflicker/healthie-platform (private).
-Tracker conventions: `docs/agents/issue-tracker.md` and `docs/agents/triage-labels.md`.
+Tracker identity and publishing: [agents/issue-tracker.md](agents/issue-tracker.md). Ticket lifecycle and review gate policy: [agents/triage-labels.md](agents/triage-labels.md). Developer/QA validation and evidence: [agent-team.md](agent-team.md). Read [overnight-delegation.md](overnight-delegation.md) before queue/review/merge actions.
 
 ## Local runtime contract
 
-Docker Desktop supplies Docker and Compose. The intended single Compose stack contains Rails, PostgreSQL and Redis. Keep database data in a persistent local named volume; separate development and test databases/cache namespaces. Rails preview binds to loopback and remains running on the tested branch while In Review. Use the selected ticket's schema and seeds when changing workspaces.
+Docker Desktop supplies Docker and Compose. One persistent local Compose stack contains Rails, PostgreSQL and Redis. Keep Postgres and Redis running between tickets; restart/rebind Rails against the selected ticket workspace rather than creating per-ticket service stacks. Keep database data in a persistent local named volume, with separate development and test databases/cache namespaces in the same services. When switching tickets, restore the selected branch's schema and intentional seed baseline and clear only the project cache. Rails preview binds to loopback; preserve it under the review lifecycle in [agents/triage-labels.md](agents/triage-labels.md).
 
-Symphony runs natively on macOS using the repository `WORKFLOW.md`. Proposed isolated workspace root: `/Users/smh/dev/healthie-platform-workspaces`. Configure runtime logs under this checkout's ignored `tmp/` tree. The workspace paths are design handles, not evidence of provisioned directories.
+Symphony runs natively on macOS using [WORKFLOW.md](../WORKFLOW.md), which owns polling, workspace and launch configuration. Configure runtime logs under this checkout's ignored `tmp/` tree. Configuration alone is not evidence of provisioned directories or a running system.
 
 Use mise-managed tool versions. The current bootstrap/check/preview/acceptance commands are `bin/bootstrap`, `bin/check`, `bin/preview` and `bin/acceptance`; update their implementations as part of local Compose setup. Exact local start/pause/resume commands and the state API port must be recorded after validation.
 
@@ -16,7 +16,7 @@ Use mise-managed tool versions. The current bootstrap/check/preview/acceptance c
 
 Before activating any implementation ticket, verify local dependencies and authentication, ensure exactly one scheduler owns the Linear project, and prove the project-wide one-ticket gate. `max_concurrent_agents: 1` only limits executing tickets; it does not prevent dispatch during another ticket's In Review or Blocked state. The gate must survive restart and resume feedback on the same branch/PR.
 
-Only Steven's move to Todo authorizes work. Agent execution moves the selected issue to In Progress, then In Review after independent QA. In Review keeps the preview and holds the project slot. Feedback returns the same ticket to Todo. After two failed repair cycles, record evidence and Blocked; Steven adds feedback and returns it to Todo. Done follows Steven's manual merge. Dependencies wait for merged/Done prerequisites.
+Apply the readiness, dependency, feedback and repair rules in [agents/triage-labels.md](agents/triage-labels.md).
 
 ## Status
 
@@ -30,9 +30,9 @@ Native Ruby/Node tooling uses `mise exec -- bin/bootstrap`, `mise exec -- bin/ch
 
 `mise exec -- bin/reset-test-data healthie_test` resets only the disposable local test database and its cache namespace. It rejects other target names and remote database hosts. Ordinary preview/start/check never reset development data. Do not remove the volume to rehearse or test a feature.
 
-Playwright runs headless Chromium by default locally and in CI. Set HEADED=true only when requesting a visible demonstration. Its own test Rails server binds to 127.0.0.1:3100 with RAILS_ENV=test. CI uses headless Chromium and uploads its HTML report, trace and actual screenshots as the PR's durable QA artifact. Artifact retention is 30 days; retain/reupload required interview evidence before expiry. Domain seeds will be added with their entities.
+For when browser acceptance applies and its browser mode, follow [agent-team.md](agent-team.md). Set `HEADED=true` for an explicitly requested visible demonstration. Playwright's own test Rails server binds to 127.0.0.1:3100 with RAILS_ENV=test. CI uploads its HTML report, trace and actual screenshots as the PR's durable QA artifact. Artifact retention is 30 days; retain/reupload required interview evidence before expiry. Domain seeds will be added with their entities.
 
-When a managed worker cannot launch Chromium directly, the operator runs `bin/qa-browser-host start` from a native terminal. QA then runs `env -u CI HEALTHIE_QA_BROWSER_WS_FILE=/Users/smh/dev/healthie-platform/tmp/symphony/browser-ws mise exec -- bin/acceptance`. The file is a local control secret: it is mode 0600 under ignored runtime state and its contents must never be printed or published. Playwright still creates an isolated test context and drives the headless Chromium process by default; `bin/qa-browser-host stop` remains an operator lifecycle action.
+When a managed worker cannot launch Chromium directly, the operator runs `bin/qa-browser-host start` from a native terminal. QA then runs `env -u CI HEALTHIE_QA_BROWSER_WS_FILE=/Users/smh/dev/healthie-platform/tmp/symphony/browser-ws mise exec -- bin/acceptance`. The file is a local control secret: it is mode 0600 under ignored runtime state and its contents must never be printed or published. Playwright still creates an isolated test context; `bin/qa-browser-host stop` remains an operator lifecycle action.
 
 ## Native Symphony controls
 
@@ -44,8 +44,18 @@ The focused check also enters the project from a cold login shell, activates mis
 
 `bin/symphony start|status|stop` controls the native process and records its PID under ignored tmp/symphony. Dashboard/state API: http://127.0.0.1:4010/ and /api/v1/state. Logs are under tmp/symphony. `pause` and `resume` persistently close/open **new dispatch**; stop the process as well to interrupt existing execution.
 
-The gate polls Linear for project review/blocked/active ownership, persists the selected issue UUID atomically, and releases it only after Done. Feedback Todo can only resume that UUID; canceled/missing owners fail closed for operator resolution. Blockers must explicitly be Done, including before resuming In Progress. The pause marker and owner survive runtime restart. Tracker errors fail closed. A separate operator reviews QA/CI and merges under the scoped overnight delegation.
+The operator owns scheduler lifecycle. Workers must not stop or restart their own scheduler. The gate owner UUID is stored in this checkout's ignored `tmp/symphony/gate/owner` file. Use `mise exec --` for native Ruby/Node tools; Docker CLI is `/Applications/Docker.app/Contents/Resources/bin/docker`. Private git/gh and existing LINEAR_API_KEY authentication are inherited; never print credential contents.
+
+The gate polls Linear for project review/blocked/active ownership and persists the selected issue UUID atomically to enforce [agents/triage-labels.md](agents/triage-labels.md). Feedback Todo can only resume that UUID; canceled/missing owners fail closed for operator resolution. The pause marker and owner survive runtime restart. Tracker errors fail closed. Queue/review/merge authority is defined in [overnight-delegation.md](overnight-delegation.md).
 
 ## Token and retry bounds
 
-Both roles use GPT-6.1 Sol at low effort. A completed notification with failed/interrupted status is a failure, never a success continuation. One automatic recovery is allowed; a second consecutive worker failure writes a persistent dispatch pause and a concise `tmp/symphony/gate/checkpoint.json`. Successful turns clear consecutive failures. Four continuation turns without leaving active state also pause dispatch. The operator diagnoses the checkpoint, fixes the underlying cause and uses `bin/symphony resume`; it must not blindly clear an unchanged checkpoint on every heartbeat. Ticket ownership and preview remain intact.
+Model/effort/Fast selection is defined in [agents/execution-settings.md](agents/execution-settings.md); QA responsibilities are in [agent-team.md](agent-team.md). A completed notification with failed/interrupted status is a failure, never a success continuation. One automatic recovery is allowed; a second consecutive worker failure writes a persistent dispatch pause and a concise `tmp/symphony/gate/checkpoint.json`. Successful turns clear consecutive failures. Four continuation turns without leaving active state also pause dispatch. The operator diagnoses the checkpoint, fixes the underlying cause and uses `bin/symphony resume`; it must not blindly clear an unchanged checkpoint on every heartbeat. Ticket ownership and preview remain intact.
+
+## Ticket launcher validation
+
+Run `bin/check-codex-launcher` for deterministic parsing, identity/ownership, request-failure and process-handoff checks using synthetic ticket data. Run `bin/check-codex-launcher --codex` before enabling or changing launch settings: it also starts the installed Codex app-server for all three effort levels with Fast on/off, reads effective configuration and QA defaults, then terminates each probe. It creates no threads, starts no model turns, changes no tickets and does not control the live Symphony process.
+
+From the selected issue workspace, `/Users/smh/dev/healthie-platform/bin/codex-for-ticket --check` validates the real owner/ticket and prints only the non-secret selection without starting Codex or writing a receipt. It requires the inherited Linear credential and a valid active owner. Avoid copying or printing the credential to run this check.
+
+The workflow invokes the canonical launch adapter by absolute path, so an existing ticket clone does not need a newer script before it can launch. The per-issue prompt also names the canonical team/execution policy for the same reason. Keep the canonical checkout available. `codex.read_timeout_ms` is 20000: Symphony starts its initialization timer before the adapter's ten-second total lookup deadline, so the additional time covers shell/Codex startup. The deterministic launcher suite checks this cross-configuration budget. No Symphony rebuild is needed; workflow reload affects future launches. Do not restart an existing worker merely to apply a new ticket setting. Store the adapter, policies and workflow in version control together before using the setup on another machine.

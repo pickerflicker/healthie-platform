@@ -16,23 +16,17 @@ Seed-data requirement: intentional, realistic baseline records populate all enti
 
 Redis requirement: provision local Redis now; the application will cache database query responses. Cache invalidation and seed/reload interaction must be designed with the chosen product behavior.
 
-Confirmed workspace lifecycle: one persistent local Compose stack for Rails, Postgres and Redis; separate Git ticket branches/workspaces; exactly one ticket in flight through implementation, QA and human review. Keep Postgres and Redis running between tickets and restart Rails against the selected workspace. When switching tickets, restore the selected branch schema and intentional seed baseline, and clear the project cache. Automated tests use a separate test database in the same Postgres container so they cannot erase the browsing baseline. No per-ticket service stack is needed.
+## Operating contracts
 
-QA tooling decision: use Playwright for independent browser-driven acceptance. QA exercises the ticket acceptance criteria and captures real browser screenshots. Reports identify the tested commit, actions/assertions, results, and any failures. Browser runs are local to the laptop against the selected ticket app. Confirmed browser: Playwright Chromium only, headless by default for local and CI QA. Use HEADED=true only for an explicitly requested visible demonstration. Diagnostic traces are proposed for failures. Confirmed evidence policy: the PR holds the single canonical QA report, including screenshots, acceptance results and tested commit. Linear contains only a concise QA passed/failed outcome, tested commit and link to the PR report. After feedback, QA updates the same report for the new tested commit; do not duplicate the full report in Linear. Final screenshot/report artifact storage mechanics remain to be settled.
+The accepted operating decisions are maintained in the following repository documents rather than repeated here:
 
-Confirmed feedback flow: Steven adds feedback in Linear and moves the current ticket from In Review to Todo. Symphony resumes that same ticket, moves it to In Progress, and reuses its branch and PR. Developer repairs the feedback; independent QA retests and refreshes evidence; the ticket returns to In Review. The current ticket retains priority and ownership of the single in-flight slot until merged/Done or explicitly canceled/released by Steven. In Review is inactive for coding but is a project-wide dispatch gate; max_concurrent_agents: 1 alone does not enforce this gate.
+- [docs/agent-team.md](docs/agent-team.md): Developer/QA ownership, delegation, validation, browser mode and evidence publication.
+- [docs/agents/triage-labels.md](docs/agents/triage-labels.md): Todo readiness, dependencies, single-ticket ownership through review, feedback, repair limits and merge/Done handling.
+- [docs/operations.md](docs/operations.md): the shared local Compose stack, workspace/schema/seed handoff, development/test database and cache isolation, preview commands, activation checks and runtime recovery.
+- [docs/overnight-delegation.md](docs/overnight-delegation.md): current queue/review/merge authority; historical authorization is not current permission.
+- [WORKFLOW.md](WORKFLOW.md): Symphony configuration and per-issue execution.
 
-Linear queue decision: Steven moves issues from Backlog into Todo to authorize agent implementation. Todo is the readiness signal; a second ready-for-agent label should not be required. Confirmed lifecycle: Backlog is pre-build human review/refinement; Todo authorizes implementation; In Progress is active Developer/QA execution; In Review is a QA-passed PR awaiting Steven; Done follows manual merge.
-
-The project team has two roles: Developer implements and repairs QA findings, logging notable assumptions in the Linear issue; independent QA starts the application, exercises acceptance criteria, and publishes real browser-captured screenshot evidence in Linear and the PR. Steven manually merges PRs. One ticket remains in flight through human review. In Review releases the coding session but does not authorize another ticket to start. Symphony waits until Steven merges the PR and the ticket becomes Done, or adds feedback and returns the same ticket to Todo for rework. Dependency decision: no stacked PRs. A ticket with an explicit Linear blocker waits until that prerequisite is merged and marked Done. No other Todo ticket, including independent work, may start while the current ticket awaits human review. After Done, Symphony may select the next dependency-ready Todo ticket. Each new feature branch starts from current main.
-
-Confirmed review preview: leave the app running on the tested ticket branch during In Review so Steven can browse it. Agent coding/QA sessions stop while awaiting human review; the app preview and its database stay available until merge or feedback.
-
-## Infrastructure design confirmation
-
-- Confirmed pause/failure behavior: provide an explicit pause command preserving current ticket ownership, workspace, database and preview state. After two unsuccessful Developer/QA repair cycles, stop and move the current ticket to Blocked with reproduction steps and failure evidence. Steven reviews, reproduces, adds feedback and returns it to Todo. Resume the same ticket/branch/PR before any new work. Neither pause nor Blocked may dispatch another ticket.
-- Confirmed browser visibility: headless Chromium is the default for local and CI QA (Steven changed this on 2026-10-20). HEADED=true enables an optional visible demonstration.
-- Steven confirmed the complete infrastructure design. No further infrastructure decisions block product scoping. Implementation follows the agreed design; verify actual local readiness before claiming completion.
+Steven confirmed the complete infrastructure design. No further infrastructure decisions block product scoping. Implementation follows these contracts; verify actual local readiness before claiming completion.
 
 ## Implementation and validation checklist
 

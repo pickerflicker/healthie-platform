@@ -12,3 +12,4 @@ fi
 (cd "$source_dir" && mise exec -- mix run --no-start "$project_root/script/symphony/run_guard_test.exs")
 (cd "$source_dir" && mise exec -- elixir "$project_root/script/symphony/gate_test.exs")
 (cd "$source_dir" && mise exec -- sh -lc 'cd "$1" && exec ./script/check_nested_toolchain' sh "$project_root")
+"$project_root/bin/check-codex-launcher"
