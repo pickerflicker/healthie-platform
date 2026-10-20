@@ -4,7 +4,13 @@ class JournalEntriesController < ApplicationController
 
   def index
     authorize JournalEntry
-    @journal_entries = policy_scope(JournalEntry).order(created_at: :desc, id: :desc)
+    @journal_entries = policy_scope(JournalEntry)
+    if params[:client_id]
+      @client = policy_scope(Client).find(params[:client_id])
+      authorize @client, :show?
+      @journal_entries = @journal_entries.where(client: @client)
+    end
+    @journal_entries = @journal_entries.includes(client: :user).order(created_at: :desc, id: :desc)
   end
 
   def show
@@ -43,9 +49,7 @@ class JournalEntriesController < ApplicationController
   private
 
   def build_journal_entry
-    # Authorize the role before dereferencing its client-only profile.
-    authorize JournalEntry, :index?
-    @journal_entry = current_user.client.journal_entries.build
+    @journal_entry = JournalEntry.new(client: current_user.client)
     authorize @journal_entry, :create?
   end
 

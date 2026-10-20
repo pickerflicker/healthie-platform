@@ -7,6 +7,7 @@ class User < ApplicationRecord
   validates :name, presence: true
   validate :matching_profile
   validate :immutable_role, on: :update
+  after_update :invalidate_provider_lists, if: :saved_change_to_name?
 
   # Saving the parent and its validated profile is one ActiveRecord transaction.
   def self.create_account!(name:, email:, password:, role:)
@@ -18,6 +19,16 @@ class User < ApplicationRecord
   end
 
   private
+
+  def invalidate_provider_lists
+    return unless provider?
+
+    ActiveRecord.after_all_transactions_commit do
+      provider.enrollments.distinct.pluck(:client_id).each do |id|
+        Rails.cache.delete(Client.provider_list_cache_key(id))
+      end
+    end
+  end
 
   def matching_profile
     expected, other = provider? ? [ provider, client ] : [ client, provider ]

@@ -25,6 +25,8 @@ Use PIC-273 as the parent for this pre-work's implementation tickets: https://li
 
 Use GitHub for code and PRs, and Linear for specs, issues, dependencies and status. Follow [../agent-team.md](../agent-team.md) for QA workpads, the acceptance checklist and canonical evidence publication. GitHub repository-to-Linear merge automation is a follow-up after initial base setup; verify it before assuming a merged PR changes status to Done.
 
+For query-performance requirements, specify the observable result: no per-row lookups and bounded database work on uncached/cold-cache reads. Require association preloading when model objects are needed; accept a SQL projection for scalar display/cache rows under [rails-guidance.md](rails-guidance.md). Avoid unconditional eager-loading requirements that cause a working `joins + pluck` projection to be rewritten into full records.
+
 ## Fetching and execution
 
 Read the issue's complete description, comments, parent and blockers. Follow [../agent-team.md](../agent-team.md) for Developer/QA execution, [triage-labels.md](triage-labels.md) for lifecycle and [../overnight-delegation.md](../overnight-delegation.md) for current authority. Symphony's tool contract is in [../../WORKFLOW.md](../../WORKFLOW.md).
