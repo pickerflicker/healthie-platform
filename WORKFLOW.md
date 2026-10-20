@@ -81,6 +81,8 @@ Verify the project slug matches tracker.project_slug above, the issue is Todo or
 
 Use linear_graphql for reads/comments and linear_transition_issue for EVERY state change.
 
+Before creating/editing a delivery PR description or handing off, follow /Users/smh/dev/healthie-platform/docs/github-linear.md and verify the saved body retains the correct closing reference. On resume, an already-merged PR requires completion reconciliation before any implementation or QA loop.
+
 ## Local runtime handles
 
 Read docs/operations.md for the canonical checkout, gate owner file, state API, native toolchain, authentication handling and operator-owned scheduler lifecycle. PIC-275 starts from its operator-prepared branch and completes focused validation and documentation. Later tickets start from merged main.

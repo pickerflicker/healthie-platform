@@ -9,6 +9,16 @@ Put `Closes PIC-<number>` in the PR description. Confirm the `linear-code`
 linkback points to the intended issue. This is a closing reference; a plain
 mention is not the completion contract. See [Linear's integration docs](https://linear.app/docs/github-integration).
 
+After creating or editing a delivery PR description, re-read the saved body and verify its closing reference still names the correct implementation ticket. Preserve that reference during summaries/evidence rewrites. `Refs PIC-<number>` is a non-closing link: a linkback or successful CI does not prove merge-to-Done is enabled. Developer verifies the saved reference before handoff, and QA checks it as part of delivery evidence.
+
+## PIC-277 regression and verified repair — 2026-10-20
+
+PR #5 contained `Refs PIC-277` when Steven merged it at 18:12:48 UTC, merge `fe163b8808fd3cc546c35e6615f73af6979cc9bc`. Linear changed In Review to In Progress at 18:12:50; Symphony dispatched it at 18:12:57. The state regression therefore preceded worker execution. The extra worker recognized the merge and made no application changes before the operator stopped it. Moving an issue to Todo also makes it eligible for execution; use the operator's pause/stop controls to interrupt dispatch.
+
+The operator corrected the merged PR description to `Closes PIC-277`; Linear then moved the issue to Done automatically, completedAt 18:15:15.675 UTC. No manual issue-state write or integration-setting change was made. This is direct evidence that correcting the closing relation repaired synchronization after merge. The non-closing reference was already present before the manual repair and was mistakenly retained during the PR description rewrite.
+
+Before any resumed application edit, inspect the associated PR's actual merge state under [agents/pr-feedback.md](agents/pr-feedback.md). A merged PR with a stale active Linear status needs completion reconciliation, not implementation or another QA/model loop.
+
 ## Verified existing configuration — 2026-10-20
 
 Read-only Linear `team.gitAutomationStates` inspection returned these existing
