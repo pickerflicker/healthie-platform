@@ -1,0 +1,9 @@
+<% if journal_entry.errors.any? %>
+  <div role="alert"><%= journal_entry.errors.full_messages.to_sentence %></div>
+<% end %>
+<%= form_with model: journal_entry do |form| %>
+  <p><%= form.label :text, "Entry text" %><br>
+  <%= form.text_area :text, rows: 10, required: true %></p>
+  <%= form.submit "Save entry" %>
+<% end %>
+<p><%= link_to "My journal", journal_entries_path %></p>

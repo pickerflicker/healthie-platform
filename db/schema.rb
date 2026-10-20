@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_20_164000) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_20_184000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -19,6 +19,14 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_20_164000) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["user_id"], name: "index_clients_on_user_id", unique: true
+  end
+
+  create_table "journal_entries", force: :cascade do |t|
+    t.bigint "client_id", null: false
+    t.text "text", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["client_id", "created_at", "id"], name: "index_journal_entries_on_client_id_and_created_at_and_id"
   end
 
   create_table "providers", force: :cascade do |t|
@@ -36,9 +44,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_20_164000) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["email"], name: "index_users_on_email", unique: true
-    t.check_constraint "role::text = ANY (ARRAY['provider'::character varying, 'client'::character varying]::text[])", name: "users_role"
+    t.check_constraint "role::text = ANY (ARRAY['provider'::character varying::text, 'client'::character varying::text])", name: "users_role"
   end
 
   add_foreign_key "clients", "users"
+  add_foreign_key "journal_entries", "clients"
   add_foreign_key "providers", "users"
 end
