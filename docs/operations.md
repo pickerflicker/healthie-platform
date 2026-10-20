@@ -46,6 +46,8 @@ The focused check also enters the project from a cold login shell, activates mis
 
 The operator owns scheduler lifecycle. Workers must not stop or restart their own scheduler. The gate owner UUID is stored in this checkout's ignored `tmp/symphony/gate/owner` file. Use `mise exec --` for native Ruby/Node tools; Docker CLI is `/Applications/Docker.app/Contents/Resources/bin/docker`. Private git/gh and existing LINEAR_API_KEY authentication are inherited; never print credential contents.
 
+Native creation, before-run and Codex launch all source canonical `script/native_bundle_env` from the ticket workspace. This selects host gems under `tmp/bundle` and isolates native Bundler configuration under `tmp/native-bundle-config`; worker commands inherit both settings. Keep workspace `.bundle/config` free of host-only paths because Docker bind-mounts the workspace and uses its own Linux bundle. The before-run hook installs missing dependencies when its check fails, including gems added during an earlier feature turn. Hook errors still fail preflight and remain subject to the bounded recovery gate. For manual native work, source the same helper before invoking Bundler/Rails.
+
 The gate polls Linear for project review/blocked/active ownership and persists the selected issue UUID atomically to enforce [agents/triage-labels.md](agents/triage-labels.md). Feedback Todo can only resume that UUID; canceled/missing owners fail closed for operator resolution. The pause marker and owner survive runtime restart. Tracker errors fail closed. Queue/review/merge authority is defined in [overnight-delegation.md](overnight-delegation.md).
 
 ## Token and retry bounds

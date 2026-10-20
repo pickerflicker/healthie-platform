@@ -18,6 +18,7 @@ workspace:
   root: /Users/smh/dev/healthie-platform-workspaces
 hooks:
   after_create: |
+    set -e
     gh auth setup-git
     git clone https://github.com/pickerflicker/healthie-platform.git .
     if [ "$(basename "$PWD")" = "PIC-275" ]; then
@@ -27,11 +28,14 @@ hooks:
     mise trust
     mise install
     eval "$(mise activate bash)"
+    . /Users/smh/dev/healthie-platform/script/native_bundle_env
     bin/bootstrap
   before_run: |
+    set -e
     eval "$(mise activate bash)"
     script/check_nested_toolchain
-    bundle check
+    . /Users/smh/dev/healthie-platform/script/native_bundle_env
+    bundle check || bundle install
   timeout_ms: 600000
 agent:
   max_concurrent_agents: 1
@@ -39,7 +43,8 @@ agent:
   max_retry_backoff_ms: 300000
 codex:
   command: >-
-    mise exec -- bash -lc 'eval "$(mise activate bash)";
+    mise exec -- bash -lc 'set -e; eval "$(mise activate bash)";
+    . /Users/smh/dev/healthie-platform/script/native_bundle_env;
     exec /Users/smh/dev/healthie-platform/bin/codex-for-ticket'
   approval_policy: never
   thread_sandbox: workspace-write
