@@ -1,0 +1,36 @@
+<h1><%= current_user.client? ? "My providers" : "My clients" %></h1>
+<% if @enrollments.empty? %>
+  <p>No current relationships.</p>
+<% else %>
+  <table>
+    <thead><tr><th><%= current_user.client? ? "Provider" : "Client" %></th><th>Plan</th><% if current_user.client? %><th>Action</th><% end %></tr></thead>
+    <tbody>
+      <% @enrollments.each do |enrollment| %>
+        <tr>
+          <td><%= current_user.client? ? enrollment.provider.name : enrollment.client.name %></td>
+          <td><%= enrollment.plan.humanize %></td>
+          <% if policy(enrollment).destroy? %>
+            <td><%= button_to "Remove #{enrollment.provider.name}", enrollment_path(enrollment), method: :delete %></td>
+          <% end %>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+<% end %>
+
+<% if @enrollment && policy(@enrollment).create? %>
+  <h2>Add a provider</h2>
+  <p>Adding a provider grants them access to your existing and future journal entries. Removing a provider revokes that access and keeps your journal entries.</p>
+  <% if @enrollment.errors.any? %>
+    <div role="alert"><%= @enrollment.errors.full_messages.to_sentence %></div>
+  <% end %>
+  <% if @available_providers.empty? %>
+    <p>All available providers are already added.</p>
+  <% else %>
+    <%= form_with model: @enrollment, url: enrollments_path do |form| %>
+      <p><%= form.label :provider_id, "Provider" %> <%= form.collection_select :provider_id, @available_providers, :id, :name %></p>
+      <p><%= form.label :plan, "Plan" %> <%= form.select :plan, [["Basic", "basic"], ["Premium", "premium"]] %></p>
+      <%= form.submit "Add provider" %>
+    <% end %>
+  <% end %>
+<% end %>
