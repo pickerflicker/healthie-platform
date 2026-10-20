@@ -42,9 +42,9 @@ Todo remains the execution authorization; no readiness label is needed. One
 ticket owns the slot through review or Blocked. Opening a linked PR can change
 Linear status through the existing team automation: keep implementation PRs
 draft until independent QA passes, and verify the actual issue status at handoff.
-The Developer stops In Review. Steven reviews/merges normally; for PIC-274–281
-only, the coordinating operator may review/merge under
-[the explicit delegation](overnight-delegation.md). Developer never self-merges.
+The Developer stops In Review. Steven reviews and merges. The earlier
+[overnight delegation](overnight-delegation.md) was revoked on 2026-10-20; its
+use for PR #3 above is historical evidence only. Developer never self-merges.
 
 A closed **unmerged** PR is not delivered. Inspect GitHub `mergedAt` and
 `mergeCommit`, not just `state=CLOSED`. Never mark Done or release ownership
@@ -70,6 +70,6 @@ Done status before allowing the next ticket to run.
    changes affect unrelated PIC projects and require separate agreement.
 
 This documentation PR is the selected non-product smoke for PIC-276. Its QA
-report records the pre-merge and close-unmerged observations. The operator must
-record its eventual merge/actual Linear transition; the Developer leaves it
+report records the pre-merge and close-unmerged observations. Steven must merge it; the operator must
+then record its actual Linear transition; the Developer leaves it
 awaiting review and does not claim future merge success.
