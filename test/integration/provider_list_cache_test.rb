@@ -1,0 +1,167 @@
+require "test_helper"
+require "redis"
+
+class ProviderListCacheTest < ActionDispatch::IntegrationTest
+  # Real commits are essential: transactional tests cannot prove after_commit.
+  self.use_transactional_tests = false
+
+  setup do
+    @users = []
+    @client = account("cache-client", "client").client
+    @other = account("cache-other", "client").client
+    @provider = account("cache-provider", "provider").provider
+    @extra = account("cache-extra", "provider").provider
+    @enrollment = @client.enrollments.create!(provider: @provider, plan: :basic)
+  end
+
+  teardown do
+    @users.reverse_each(&:destroy!)
+    [ @client, @other ].each { |client| Rails.cache.delete(Client.provider_list_cache_key(client.id)) }
+  end
+
+  test "Redis miss queries once and hit reuses serializable rows with client isolation" do
+    queries = []
+    events = []
+    sql = ->(event) { queries << event.payload[:sql] if event.payload[:sql].match?(/SELECT.*FROM "enrollments"/m) }
+    cache = ->(event) { events << event.name }
+    ActiveSupport::Notifications.subscribed(sql, "sql.active_record") do
+      ActiveSupport::Notifications.subscribed(cache, /cache_(generate|fetch_hit)\.active_support/) do
+        assert_equal [ { enrollment_id: @enrollment.id, provider_id: @provider.id, name: "cache-provider", plan: "basic" } ], @client.provider_list
+        assert_equal 1, queries.length
+        assert_equal @client.provider_list, @client.provider_list
+        assert_equal 1, queries.length, "Redis hits must not rerun the provider-list query"
+      end
+    end
+    assert_includes events, "cache_generate.active_support"
+    assert_includes events, "cache_fetch_hit.active_support"
+    redis = Redis.new(url: ENV.fetch("REDIS_URL", "redis://127.0.0.1:56379/0"))
+    assert redis.exists?("healthie:test:#{Client.provider_list_cache_key(@client.id)}")
+    assert_empty @other.provider_list
+    assert_equal [ @provider.id ], @client.provider_list.pluck(:provider_id)
+    assert_equal [ @provider.id ], @client.providers.pluck(:id), "raw association remains available"
+  end
+
+  test "committed add remove and plan changes invalidate only the affected client" do
+    @client.provider_list
+    @other.provider_list
+    other_key = Client.provider_list_cache_key(@other.id)
+    extra = @client.enrollments.create!(provider: @extra, plan: :premium)
+    assert_nil Rails.cache.read(Client.provider_list_cache_key(@client.id))
+    assert_equal [], Rails.cache.read(other_key)
+    assert_equal [ @provider.id, @extra.id ], @client.provider_list.pluck(:provider_id)
+    @enrollment.update!(plan: :premium)
+    assert_equal %w[premium premium], @client.provider_list.pluck(:plan)
+    extra.destroy!
+    assert_nil Rails.cache.read(Client.provider_list_cache_key(@client.id))
+    assert_equal [ @provider.id ], @client.provider_list.pluck(:provider_id)
+    @enrollment.destroy!
+    assert_empty @client.provider_list
+    assert_equal [], Rails.cache.read(other_key)
+  end
+
+  test "provider name commits invalidate every enrolled client and rollback preserves display" do
+    @other.enrollments.create!(provider: @provider)
+    [ @client, @other ].each(&:provider_list)
+    User.transaction do
+      @provider.user.update!(name: "Rolled back")
+      assert_equal [ "Rolled back" ], @client.provider_list.pluck(:name)
+      raise ActiveRecord::Rollback
+    end
+    assert_equal [ "cache-provider" ], @client.provider_list.pluck(:name)
+    User.transaction do
+      @provider.user.reload.update!(name: "Renamed provider")
+      @provider.user.update!(password: "Another-password-2026")
+    end
+    [ @client, @other ].each do |client|
+      assert_nil Rails.cache.read(Client.provider_list_cache_key(client.id))
+      assert_equal [ "Renamed provider" ], client.provider_list.pluck(:name)
+    end
+  end
+
+  test "multiple enrollment saves in one commit invalidate both previous and current clients" do
+    @client.provider_list
+    @other.provider_list
+    Enrollment.transaction do
+      @enrollment.update!(client: @other)
+      @enrollment.update!(plan: :premium)
+    end
+    [ @client, @other ].each { |client| assert_nil Rails.cache.read(Client.provider_list_cache_key(client.id)) }
+    assert_empty @client.provider_list
+    assert_equal [ "premium" ], @other.provider_list.pluck(:plan)
+  end
+
+  test "transaction reads bypass warm cache and rollback cannot populate a cold cache" do
+    key = Client.provider_list_cache_key(@client.id)
+    original = @client.provider_list
+    Enrollment.transaction do
+      @client.enrollments.create!(provider: @extra)
+      assert_equal [ @provider.id, @extra.id ], @client.provider_list.pluck(:provider_id)
+      assert_equal original, Rails.cache.read(key)
+      raise ActiveRecord::Rollback
+    end
+    assert_equal original, @client.provider_list
+    Rails.cache.delete(key)
+    Enrollment.transaction do
+      @enrollment.destroy!
+      assert_empty @client.provider_list
+      assert_nil Rails.cache.read(key)
+      raise ActiveRecord::Rollback
+    end
+    assert_equal original, @client.provider_list
+  end
+
+  test "warm display cache cannot grant removed provider journal or feed access" do
+    entry = @client.journal_entries.create!(text: "Private cache regression")
+    actor = @provider.user
+    assert JournalEntryPolicy.new(actor, entry).show?
+    stale = @client.provider_list
+    @enrollment.destroy!
+    assert_empty @client.provider_list
+    # Even deliberately stale display data must never become permission evidence.
+    Rails.cache.write(Client.provider_list_cache_key(@client.id), stale)
+    assert_not JournalEntryPolicy.new(actor, entry).show?
+    assert_not ClientPolicy.new(actor, @client).show?
+    assert_empty JournalEntryPolicy::Scope.new(actor, JournalEntry.all).resolve
+    assert_empty actor.provider.journal_entries
+    assert_equal "cache-provider@healthie.example", actor.email
+    assert actor.valid_password?("Healthie-demo-2026")
+    post user_session_path, params: { user: { email: actor.email, password: "Healthie-demo-2026" } }
+    assert_redirected_to root_path
+    [ "/journal_entries/#{entry.id}", "/clients/#{@client.id}/journal_entries" ].each do |path|
+      get path
+      assert_equal 404, response.status
+      assert_not_includes response.body, entry.text
+    end
+    get "/journal_entries"
+    assert_equal 200, response.status
+    assert_not_includes response.body, entry.text
+    assert JournalEntry.exists?(entry.id)
+  end
+
+  test "test cache clearing and repeat seeds preserve development cache and restore coherent lists" do
+    redis = Redis.new(url: ENV.fetch("REDIS_URL", "redis://127.0.0.1:56379/0"))
+    sentinel = "healthie:development:qa-isolation-#{SecureRandom.hex(8)}"
+    redis.set(sentinel, "preserve", ex: 60)
+    Rails.application.load_seed
+    seeded_client = User.find_by!(email: "client@healthie.example").client
+    expected = seeded_client.provider_list
+    counts = [ User.count, Enrollment.count, JournalEntry.count ]
+    Rails.cache.write(Client.provider_list_cache_key(seeded_client.id), [ { name: "Stale seed result" } ])
+    Rails.application.load_seed
+    assert_nil Rails.cache.read(Client.provider_list_cache_key(seeded_client.id))
+    assert_equal expected, seeded_client.provider_list
+    assert_equal counts, [ User.count, Enrollment.count, JournalEntry.count ]
+    Rails.cache.clear
+    assert_nil Rails.cache.read(Client.provider_list_cache_key(seeded_client.id))
+    assert_equal "preserve", redis.get(sentinel)
+    assert_equal "healthie_test", ActiveRecord::Base.connection.current_database
+  ensure
+    redis&.del(sentinel) if sentinel
+  end
+
+  private
+
+  def account(name, role)
+    User.create_account!(name: name, email: "#{name}@healthie.example", password: "Healthie-demo-2026", role: role).tap { |user| @users << user }
+  end
+end

@@ -72,8 +72,45 @@ The tests also exercise tied timestamps across different clients.
   joining. No additional index is justified by a tiny seed dataset alone.
 - Both journal listing queries and provider-client lists remain uncached in Redis.
   ActiveRecord's ordinary request-local query cache is separate from persistent
-  application caching. The only planned Redis feature is the per-client provider
-  display list (PIC-281), never permission evidence.
+  application caching. The only Redis result cache is the per-client provider
+  display list, never permission evidence.
+
+## Provider-list cache
+
+`client.provider_list` returns serializable hashes with enrollment/provider IDs,
+provider name and plan, ordered by enrollment ID. The client **My providers** page
+uses it after Pundit scopes the client; `client.providers` remains a raw
+ActiveRecord association. The provider directory dropdown is also queried live.
+
+Redis keys are `healthie:<environment>:clients/<client ID>/provider-list/v1`, with
+the environment store's one-hour expiry. The first read fetches the joined result;
+subsequent reads reuse it. Enrollment commits (including plan updates) delete
+affected client keys. Provider name commits delete keys for all enrolled clients.
+Email is not cached. Reads inside a database transaction query directly without
+reading or writing Redis, so a rollback cannot publish uncommitted membership.
+Seeds clear only this project's current-environment cache namespace after loading.
+
+This small local app uses synchronous after-commit invalidation and Redis's Rails
+store fallback to database queries on cache read failure. Expiry bounds stale
+display data if a Redis invalidation fails; it is not the normal refresh mechanism.
+Bulk SQL skips model callbacks, so maintenance scripts must clear the relevant
+project cache as seeds do. This is ordinary cache-aside behavior: it does not
+serialize concurrent cache fills against commits across processes. Distributed
+cache-coherence machinery is outside the accepted pre-work. Journal authorization
+always queries current enrollments, regardless of stale or unavailable display
+cache data.
+
+To observe miss/hit/invalidation on the real local Redis integration:
+
+```sh
+source script/native_bundle_env
+mise exec -- bin/rails test test/integration/provider_list_cache_test.rb
+```
+
+The focused checks observe Rails cache notifications, count the actual joined SQL,
+verify Redis key presence, and exercise committed changes and rollbacks. They also
+deliberately restore stale display data after removal and verify policy, direct
+journal and feed denial. Test cache clearing leaves development keys intact.
 
 ## Inspect the actual queries
 

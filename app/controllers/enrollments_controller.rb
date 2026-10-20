@@ -39,10 +39,12 @@ class EnrollmentsController < ApplicationController
   end
 
   def load_lists
-    @enrollments = policy_scope(Enrollment).includes(provider: :user, client: :user).order(:id)
     if current_user.client?
+      @provider_list = policy_scope(Client).find(current_user.client.id).provider_list
       @available_providers = policy_scope(Provider, policy_scope_class: ProviderDirectoryPolicy::Scope)
         .where.not(id: current_user.client.enrollments.select(:provider_id)).includes(:user).order(:id)
+    else
+      @enrollments = policy_scope(Enrollment).includes(client: :user).order(:id)
     end
   end
 end

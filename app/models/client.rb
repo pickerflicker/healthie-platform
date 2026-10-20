@@ -9,7 +9,25 @@ class Client < ApplicationRecord
   validate :immutable_account, on: :update
   before_destroy :retain_account_profile
 
+  def self.provider_list_cache_key(client_id)
+    "clients/#{client_id}/provider-list/v1"
+  end
+
+  def provider_list
+    # Never publish a transaction's uncommitted membership, even on a cache miss.
+    return query_provider_list if self.class.current_transaction.open?
+
+    Rails.cache.fetch(self.class.provider_list_cache_key(id)) { query_provider_list }
+  end
+
   private
+
+  def query_provider_list
+    enrollments.joins(provider: :user).order(:id)
+      .pluck(:id, :provider_id, "users.name", :plan).map do |enrollment_id, provider_id, name, plan|
+        { enrollment_id: enrollment_id, provider_id: provider_id, name: name, plan: plan }
+      end
+  end
 
   def matching_role
     errors.add(:user, "must be a client without a provider profile") unless user&.client? && user.provider.nil?

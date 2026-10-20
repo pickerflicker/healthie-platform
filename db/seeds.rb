@@ -34,3 +34,7 @@ JournalEntry.transaction do
     client.journal_entries.find_or_create_by!(created_at: Time.iso8601(timestamp), text: text)
   end
 end
+
+# Seeds may restore relationships or identity data; never retain an earlier list.
+# RedisCacheStore#clear is restricted to this project's current-env namespace.
+Rails.cache.clear
