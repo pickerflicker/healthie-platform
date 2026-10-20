@@ -1,0 +1,19 @@
+# PIC-276 independent QA
+
+**PASS for pre-merge review readiness; final smoke merge remains pending.**
+
+Tested source: `8051f72104c0db90fe7390ddbd3b5bfdcda65102`, against base `383892f12099974e752d3c04c31a7ab1d733b5d1` on 2026-10-20. QA: independent `/root/qa`, thread `01a15a18-6ee2-7be3-a148-7a87ddc62539`, GPT-6.1 Sol / low. No application source, integration settings, issue states, scheduler or browser-host lifecycle changed by QA.
+
+| Criterion | Evidence and result |
+| --- | --- |
+| Supported connection, closing reference and merge→Done | PASS. Private `gh pr view 3/4` access; PR4 contains `Closes PIC-276` and [linear-code linkback](https://github.com/pickerflicker/healthie-platform/pull/4#issuecomment-6295531146). Independent read-only Linear GraphQL returned PIC team review→In Review, start→In Progress, merge→Done, all targetBranch null. Existing connection reused. |
+| Review before merge; close unmerged is not delivery | PASS for pre-merge/negative behavior. While PR4 was deliberately CLOSED, GitHub returned mergedAt=null and mergeCommit=null; independent Linear read after synchronization time returned PIC-276 In Progress, not Done. Developer was notified and reopened the same PR; latest read OPEN and draft, still unmerged. Steven's actual smoke merge and resulting transition are PENDING. |
+| Recorded transition evidence, fallback and ownership rules | PASS for documentation. `docs/github-linear.md` records closing links, observed historical transition, guarded manual fallback and actual-status verification before release. Operations links to it. AGENTS, WORKFLOW and overnight documentation reflect Steven's revocation: finish this ticket, stop In Review, Steven selects Todo and merges. Historical delegation remains clearly historical. Full Steven-merge proof remains PENDING. |
+| Repository/team rule validation without unrelated changes | PASS. Independent API reads above; reviewed final documentation-only diff and operating-rule changes. No installation or settings mutation. |
+| Non-product smoke personally merged by Steven | PENDING human handoff. PR4 is the selected documentation smoke; do not check this validation item until Steven merges and actual Linear Done is observed. |
+
+Historical corroboration: PR3 contains `Closes PIC-275`, merged at `2026-10-20T16:12:12Z` with base SHA above. Independent Linear history shows In Review→Done at `2026-10-20T16:12:14.089Z`; completedAt `16:12:14.122Z`, currently Done. The operator's PIC-276 comment explicitly says no manual Done write occurred. These observations support the recorded existing integration; QA did not witness that event live, cannot independently exclude every other writer, and does not equate the prior delegated operator merge with Steven personally merging. The older updatedAt in the documentation is an original observed snapshot; later comments changed updatedAt.
+
+Validation: `mise exec -- bin/check` passed (Zeitwerk, 25 RuboCop files, 1 test/5 assertions). Sandbox cache/home warnings did not affect its exit status. `env -u CI HEALTHIE_QA_BROWSER_WS_FILE=/Users/smh/dev/healthie-platform/tmp/symphony/browser-ws mise exec -- bin/acceptance` passed 1 test using existing headless Chromium. Playwright's isolated RAILS_ENV=test server uses port 3100; preview port 3000 `/up` returned 200 and remains running. Actual [screenshot](health.png) was visually inspected: green Rails health response; it proves runtime health, not hosted integration behavior.
+
+After Steven merges [PR4](https://github.com/pickerflicker/healthie-platform/pull/4), record its mergedAt/merge SHA and actual PIC-276 Done transition. If sync fails, follow the documented guarded fallback and identify it as manual. Preserve preview and the single-ticket slot until then; no subsequent ticket is authorized by this report.
