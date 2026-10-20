@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+set -euo pipefail
+cd "$(dirname "$0")/.."
+if [[ "${1:-}" != "healthie_test" ]]; then
+  echo 'Usage: bin/reset-test-data healthie_test (disposable local test database only)' >&2
+  exit 2
+fi
+export RAILS_ENV=test
+bin/rails runner 'c = ActiveRecord::Base.connection_db_config; abort "Refusing non-local test target" unless Rails.env.test? && c.database == "healthie_test" && %w[127.0.0.1 localhost].include?(c.configuration_hash[:host]); ActiveRecord::Base.connection.execute("SELECT 1")'
+bin/rails db:reset
+bin/rails runner 'Rails.cache.clear'

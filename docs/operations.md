@@ -1,21 +1,33 @@
-# Operations
+# Local operations
 
-Canonical checkout: /Users/smh/dev/healthie-platform.
-Remote: https://github.com/pickerflicker/healthie-platform (private).
-Linear project slug: c6cbdb1032a3.
-Runner: SSH alias symphony-runner (10.0.0.180), existing canonical symphony container.
-Registration: /opt/symphony-runtime/projects/active/healthie-platform.env.
-Workflow: /opt/symphony-runtime/workflows/healthie-platform.md, byte-for-byte WORKFLOW.md.
-State API on runner: http://127.0.0.1:4010/api/v1/state.
-Workspace: /srv/symphony-workspaces/healthie-platform.
-Logs: /srv/symphony-logs/healthie-platform.
-Project toolchain: /opt/data/home/.local/healthie-toolchain/ruby-3.4.11 (persistent runner home).
-Profile: MODE=normal, explicit Developer + QA policy override. The shared fast profile forbids subagents and is intentionally not selected.
+Canonical checkout: `/Users/smh/dev/healthie-platform`.
+Code/PR repository: https://github.com/pickerflicker/healthie-platform (private).
+Tracker conventions: `docs/agents/issue-tracker.md` and `docs/agents/triage-labels.md`.
 
-Start one ready issue with ready-for-agent + In Progress. Move to Backlog to pause; preserve its workspace. Worker hands off to In Review. Product issues await brainstorming. Inspect state with:
+## Local runtime contract
 
-```sh
-ssh symphony-runner 'curl -fsS http://127.0.0.1:4010/api/v1/state'
-```
+Docker Desktop supplies Docker and Compose. The intended single Compose stack contains Rails, PostgreSQL and Redis. Keep database data in a persistent local named volume; separate development and test databases/cache namespaces. Rails preview binds to loopback and remains running on the tested branch while In Review. Use the selected ticket's schema and seeds when changing workspaces.
 
-Do not restart the shared container to change this project: the supervisor discovers registration/workflow changes. Do not alter unrelated registrations. App preview binds 127.0.0.1. No production deployment or public route is provisioned at the skeleton stage.
+Symphony runs natively on macOS using the repository `WORKFLOW.md`. Proposed isolated workspace root: `/Users/smh/dev/healthie-platform-workspaces`. Configure runtime logs under this checkout's ignored `tmp/` tree. The workspace paths are design handles, not evidence of provisioned directories.
+
+Use mise-managed tool versions. The current bootstrap/check/preview/acceptance commands are `bin/bootstrap`, `bin/check`, `bin/preview` and `bin/acceptance`; update their implementations as part of local Compose setup. Exact local start/pause/resume commands and the state API port must be recorded after validation.
+
+## Activation prerequisites
+
+Before activating any implementation ticket, verify local dependencies and authentication, ensure exactly one scheduler owns the Linear project, and prove the project-wide one-ticket gate. `max_concurrent_agents: 1` only limits executing tickets; it does not prevent dispatch during another ticket's In Review or Blocked state. The gate must survive restart and resume feedback on the same branch/PR.
+
+Only Steven's move to Todo authorizes work. Agent execution moves the selected issue to In Progress, then In Review after independent QA. In Review keeps the preview and holds the project slot. Feedback returns the same ticket to Todo. After two failed repair cycles, record evidence and Blocked; Steven adds feedback and returns it to Todo. Done follows Steven's manual merge. Dependencies wait for merged/Done prerequisites.
+
+## Status
+
+Skill configuration and candidate local workflow are documented. Docker Compose provisioning, native Symphony activation, review-gate implementation and end-to-end smoke remain pending. GitHub-to-Linear integration is a follow-up after base setup; verify it before assuming that merging a PR updates the ticket to Done.
+
+## Verified Compose entry points
+
+Use `bin/stack up` to build and start the single project stack, prepare both databases, and wait for health. `bin/stack status`, `bin/stack logs`, and `bin/stack stop` inspect or stop this project. Stop preserves the `healthie-platform_postgres_data` volume. `bin/preview` rebuilds/rebinds the web service to the current checkout, preserving the shared data services. The loopback preview is http://127.0.0.1:3000.
+
+Native Ruby/Node tooling uses `mise exec -- bin/bootstrap`, `mise exec -- bin/check`, and `mise exec -- bin/acceptance`. PostgreSQL is at loopback port 55432 with separate `healthie_development` and `healthie_test` databases; Redis is at loopback 56379 with environment namespaces. Credentials in Compose are deliberately local development fixtures. Do not expose these ports publicly.
+
+`mise exec -- bin/reset-test-data healthie_test` resets only the disposable local test database and its cache namespace. It rejects other target names and remote database hosts. Ordinary preview/start/check never reset development data. Do not remove the volume to rehearse or test a feature.
+
+Playwright runs headed Chromium by default on this Mac. Its own test Rails server binds to 127.0.0.1:3100 with RAILS_ENV=test. CI uses headless Chromium and uploads its HTML report, trace and actual screenshots as the PR's durable QA artifact. Artifact retention is 30 days; retain/reupload required interview evidence before expiry. Domain seeds will be added with their entities.

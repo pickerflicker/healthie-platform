@@ -1,13 +1,16 @@
-# Infrastructure plan
+# Interview pre-work implementation plan
 
-1. Generate Rails 8.1.4 on Ruby 3.4.11 in the canonical checkout /Users/smh/dev/healthie-platform. Keep default Hotwire/import maps. Defer persistence and all product features to brainstorming.
-2. Add reproducible bootstrap, checks, preview and health smoke; verify locally.
-3. Publish the bootstrap to private pickerflicker/healthie-platform so the runner can clone it.
-4. Register WORKFLOW.md in the existing canonical Symphony container, normal profile with the explicit two-role override, one issue concurrency, exact Linear project slug, and In Progress + ready-for-agent eligibility.
-5. Run PIC-272 to prove clone/bootstrap, independent QA and safe handoff/pause. Leave no product ticket active.
-6. Brainstorm the product, then record the accepted scope and create dependency-aware tickets before feature work.
+The current repository is a stateless Rails 8.1.4 / Ruby 3.4.11 skeleton. The accepted scope is recorded in `CONTEXT.md`, `GLOSSARY.md` and `docs/adr/`; employer requirements are in `docs/interview-brief.md`.
 
-Linear board: https://linear.app/pickerflicker/project/healthie-platform-c6cbdb1032a3
-Setup: PIC-271. Infrastructure smoke: PIC-272.
+1. Publish a spec and propose dependency-aware implementation tickets using `docs/agents/issue-tracker.md` and `docs/agents/triage-labels.md`. New tickets remain in Backlog until Steven authorizes them through Todo.
+2. Provision the laptop-only base: Docker Desktop and one Compose stack for Rails, PostgreSQL and Redis. Run Symphony natively on macOS with 10-second polling.
+3. Implement and validate exclusive scheduler ownership plus the one-ticket-through-review dispatch gate. The same ticket resumes after feedback or Blocked recovery; In Review keeps the app preview running without starting another ticket.
+4. After initial base setup, connect the GitHub repository to Linear and verify merge-to-Done automation.
+5. Implement the agreed User/profile model, Devise login, Pundit policies, enrollments, journals, indexes, intentional seeds and the four required queries in small end-to-end slices.
+6. Add only the client provider-list Redis cache, with the agreed invalidation rules and authorization independent of cache contents.
+7. Validate each ticket with Developer checks and independent headed Playwright Chromium QA. Publish the canonical report/screenshots on the PR and a concise result/commit/link in Linear. Steven manually merges each PR.
 
-No database server, product schema, authentication, background processing infrastructure, or deployment is required to boot this stateless skeleton. Persistence will use the shared Postgres server and isolated roles/databases. Production promotion follows local acceptance and Steven's approval.
+Board: https://linear.app/pickerflicker/project/healthie-platform-c6cbdb1032a3.
+The initial skeleton setup and smoke were tracked in PIC-271/PIC-272; those do not prove the new local runtime is ready.
+
+Implementation readiness requires actual local startup and workflow evidence. All application services and data run on the laptop; Linear, GitHub and the AI provider remain hosted dependencies.

@@ -1,0 +1,3 @@
+# Explicit User role with Provider and Client profiles
+
+Use one Devise User identity with canonical name/email and a string-backed provider/client role, plus separate Provider and Client profiles with unique user_id foreign keys. Steven chose this over STI and polymorphic profiles to retain explicit domain tables and ordinary enrollment/journal foreign keys, while Pundit evaluates role, ownership and current enrollment access. The small extra profile tables and role/profile consistency checks are accepted costs; create the matching records atomically, validate exactly the matching profile and expose identity fields through delegation. user.client? is a role predicate; user.client is the profile.

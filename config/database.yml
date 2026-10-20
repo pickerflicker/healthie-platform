@@ -1,0 +1,14 @@
+default: &default
+  adapter: postgresql
+  encoding: unicode
+  host: <%= ENV.fetch("DB_HOST", "127.0.0.1") %>
+  port: <%= ENV.fetch("DB_PORT", "55432") %>
+  username: healthie
+  password: healthie_local_only
+  pool: <%= ENV.fetch("RAILS_MAX_THREADS", 5) %>
+development:
+  <<: *default
+  database: healthie_development
+test:
+  <<: *default
+  database: healthie_test
