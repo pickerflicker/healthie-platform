@@ -51,4 +51,28 @@ class AuthenticationTest < ActionDispatch::IntegrationTest
     assert_empty ProviderPolicy::Scope.new(client, Provider.all).resolve
     assert_not_includes ClientPolicy::Scope.new(client, Client.all).resolve, other.client
   end
+
+  test "client policy independently enforces record ownership and role" do
+    client = User.find_by!(role: "client")
+    provider = User.find_by!(role: "provider")
+    other = User.create_account!(name: "Other", email: "other@example.com", password: "test-password-123", role: "client")
+
+    assert ClientPolicy.new(client, client.client).show?
+    assert_not ClientPolicy.new(client, other.client).show?
+    assert_not ClientPolicy.new(other, client.client).show?
+    assert_not ClientPolicy.new(provider, client.client).show?
+    assert_not ClientPolicy.new(nil, client.client).show?
+  end
+
+  test "client home authorizes own loaded profile despite forged record parameters" do
+    other = User.create_account!(name: "Other", email: "other@example.com", password: "test-password-123", role: "client")
+    post user_session_path, params: { user: { email: "client@healthie.example", password: "Healthie-demo-2026" } }
+
+    get client_home_path, params: { id: other.client.id, client_id: other.client.id, user_id: other.id, role: "provider" }
+    assert_response :success
+    assert_select "h1", "Client home"
+    assert_select "main", text: /Alex Rivera/
+    assert_select "main", text: /client@healthie.example/
+    assert_select "main", text: /other@example.com/, count: 0
+  end
 end
