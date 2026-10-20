@@ -1,33 +1,19 @@
 # healthie-platform
 
-Rails interview pre-work. Read `CONTEXT.md` for the agreed scope, architecture and interview-specific operating rules. Read `docs/operations.md` before local runtime setup. Validate the local runtime and single-ticket dispatch gate before activating implementation; documented plans are not proof that infrastructure is running.
+Rails interview pre-work with laptop-local infrastructure. Use this repository's instructions and context; do not use Steven's second-brain skills for this project. Preserve secrets, unrelated projects and dirty user changes.
 
-Exactly two execution roles: Developer (parent and implementation owner) and one independent QA subagent. QA uses headless Playwright Chromium by default (Steven’s 2026-10-20 change supersedes older headed-browser ticket wording) and may write tests/evidence, but does not edit application source. Developer repairs QA findings. Keep the same role sessions during a repair loop; no additional reviewer or recursive delegation.
+The execution team remains Developer (parent and sole application implementation owner) plus one independent QA subagent. One ticket holds the project slot through implementation, QA and human review.
 
-Run one ticket through implementation, QA and human review before starting another, including independent work. Follow the status rules in `docs/agents/triage-labels.md`. Preserve the active ticket workspace, branch, PR, database and review preview. Steven manually merges PRs. After two unsuccessful repair cycles, record reproduction evidence and move the ticket to Blocked; resume the same ticket when Steven adds feedback and returns it to Todo. Use guarded Linear transitions during Symphony execution.
+## Required reading
 
-This project explicitly uses laptop-local infrastructure: Docker Desktop and Compose for Rails/Postgres/Redis, native macOS Symphony, and 10-second Linear polling. Hosted Linear/GitHub/AI connectivity remains required. Use the project's local database and test-data/cache isolation rules in `CONTEXT.md`. Verify that exactly one scheduler owns this Linear project before activation. Preserve unrelated projects and dirty user changes.
+- Before planning or changing scope, read [CONTEXT.md](CONTEXT.md) for accepted product decisions and interview boundaries.
+- Before implementation, QA or reviewing delivery evidence, read [docs/agent-team.md](docs/agent-team.md). It owns role responsibilities, delegation, validation and reporting requirements.
+- Before generating, publishing or reviewing QA evidence, read [docs/agents/qa-evidence.md](docs/agents/qa-evidence.md). Reports and uploaded screenshots belong in one PR comment; generated evidence must stay out of Git.
+- Before publishing or fetching tracker work, read [docs/agents/issue-tracker.md](docs/agents/issue-tracker.md) for the existing Linear project and publishing conventions.
+- Before authoring execution settings or changing the agent launcher, read [docs/agents/execution-settings.md](docs/agents/execution-settings.md) for the ticket format and fixed-model/effort/Fast contract.
+- Before claiming work, changing status or handing off a ticket, read [docs/agents/triage-labels.md](docs/agents/triage-labels.md). It owns readiness, dependencies, slot ownership, repair limits and review/merge lifecycle.
+- Before queueing, reviewing or merging work, read [docs/overnight-delegation.md](docs/overnight-delegation.md) for current authority. Overnight delegation is inactive.
+- Before runtime setup, activation, recovery or browser acceptance, read [docs/operations.md](docs/operations.md). Validate actual runtime readiness and exclusive scheduler ownership before activation; documented plans are not running-system evidence.
+- Before domain modeling, spec writing, ticketing, implementation or code review, read [docs/agents/domain.md](docs/agents/domain.md) for glossary and ADR requirements.
 
-Current commands: `bin/bootstrap`, `bin/check`, `bin/preview`, `bin/acceptance`. Update their contracts during local setup. Keep validation focused; no coverage quota. Store the canonical QA report/screenshots on the PR, with only a result, tested commit and report link in Linear. Leave the tested preview running in In Review.
-
-## Agent skills
-
-### Issue tracker
-
-Publish specs and implementation issues to the existing Linear project. Before publishing or fetching work, read `docs/agents/issue-tracker.md`.
-
-### Triage labels
-
-Read `docs/agents/triage-labels.md` for the mapping from skill triage roles to Linear states. Todo authorizes work; no readiness label is required.
-
-### Domain docs
-
-Single-context layout: `GLOSSARY.md` and `docs/adr/`. Before domain modeling, spec writing, ticketing or implementation, read `docs/agents/domain.md`.
-
-## Current scoped delegation
-
-Overnight delegation is inactive: Steven revoked it on 2026-10-20. Read `docs/overnight-delegation.md`. Steven handles Todo selection and final review/merge. Finish only the already-authorized ticket and stop In Review; preserve its preview.
-
-Developer and QA: `gpt-6.1-sol`, low reasoning effort (Steven’s explicit choice). Keep QA context focused on the current issue and changed behavior.
-
-Before generating or publishing QA evidence, read `docs/agents/qa-evidence.md`. Publish one PR Conversation comment with the test-case table and embedded uploaded screenshots; generated reports/screenshots/traces must stay out of Git. This supersedes older repository-linked evidence wording.
+[WORKFLOW.md](WORKFLOW.md) owns Symphony configuration and the per-issue execution prompt; its launcher applies ticket execution settings. Follow its runtime limits when executing tickets.

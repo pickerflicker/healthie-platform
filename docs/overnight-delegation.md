@@ -1,6 +1,6 @@
 # Overnight delegation — inactive
 
-Steven explicitly turned overnight mode OFF on 2026-10-20. This revokes the earlier batch delegation below: the operator must not move Backlog tickets to Todo, merge PRs, mark delivery Done, or queue the next ticket on Steven's behalf without a new explicit request. Steven now handles readiness and final review/merge. The already-authorized current ticket may finish Developer/QA work and stop In Review with its preview running. Automatic GitHub-to-Linear completion after Steven's merge remains valid. GPT-6.1 Sol at low effort for both roles and headless Playwright remain selected.
+Steven explicitly turned overnight mode OFF on 2026-10-20. This revokes the earlier batch delegation below: the operator must not move Backlog tickets to Todo, merge PRs, mark delivery Done, or queue the next ticket on Steven's behalf without a new explicit request. Steven now handles readiness and final review/merge. The already-authorized current ticket may finish Developer/QA work and stop In Review with its preview running. Automatic GitHub-to-Linear completion after Steven's merge remains valid. Current execution settings and QA policy are defined in [execution-settings.md](agents/execution-settings.md) and [agent-team.md](agent-team.md).
 
 The continuation heartbeat is paused. The earlier authorization is historical, not current permission.
 
