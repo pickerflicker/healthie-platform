@@ -7,11 +7,12 @@ Rails 8.1 / Ruby 3.4 interview app. Local Docker Compose runs Rails, PostgreSQL 
 These are the four ActiveRecord queries required by the interview spec. After the local setup below, **run all four in one read-only command**:
 
 ```sh
-source script/native_bundle_env
-mise exec -- bin/rails runner script/interview_queries.rb
+bin/queries
 ```
 
-Source the native environment helper once per shell so runner and console commands use the installed host gems. The [runner](script/interview_queries.rb) prints each query's SQL, result IDs and PostgreSQL `EXPLAIN` plan against the current development database. Results reflect current data, including changes made in the UI; the [query walkthrough](docs/queries.md) documents the clean seed baseline and index tradeoffs.
+The [shortcut](bin/queries) runs the [query script](script/interview_queries.rb) inside the existing Rails container, using this checkout's Compose configuration. It works even when Docker is missing from your shell's PATH and requires no native Ruby gems. The web container must already be running. It prints each query's SQL, result IDs and PostgreSQL `EXPLAIN` plan against the current development database. Results reflect current data, including changes made in the UI; the [query walkthrough](docs/queries.md) documents the clean seed baseline and index tradeoffs.
+
+From another directory, use the full path: `~/dev/healthie-platform/bin/queries`.
 
 | Spec requirement | ActiveRecord query |
 | --- | --- |
@@ -20,7 +21,7 @@ Source the native environment helper once per shell so runner and console comman
 | A client's journal entries, newest first | `client.journal_entries.order(created_at: :desc, id: :desc)` |
 | Journal entries across all clients of a provider, newest first | `provider.journal_entries.order(created_at: :desc, id: :desc)` |
 
-To run them individually in `mise exec -- bin/rails console`, first select the seeded profiles:
+To run them individually in a native Rails console, first run `source script/native_bundle_env`, then `mise exec -- bin/rails console` and select the seeded profiles:
 
 ```ruby
 provider = User.find_by!(email: "provider@healthie.example").provider
