@@ -14,7 +14,7 @@ On resume, Developer must complete [the PR feedback sequence](agents/pr-feedback
 
 For authorization changes, Developer and QA follow [authorization.md](agents/authorization.md); include that policy in the QA assignment and use its focused access checks during self-review and independent validation.
 
-For Rails feature work, both roles follow [rails-guidance.md](agents/rails-guidance.md), read the applicable imported skills with Healthie's overrides, and include those references in the QA assignment. Apply them within the existing self-review and independent QA steps.
+For Rails feature work, both roles follow [rails-guidance.md](agents/rails-guidance.md), read the applicable imported skills with Healthie's overrides, and include those references in the QA assignment. Self-review and QA explicitly check Steven's preference for plain associations and query-local `.order(...)`/preloads with visible sort columns and tie-breakers; flag hidden ordering in associations, `default_scope` or ordering-only scopes. Apply this within the existing review steps.
 
 Write the smallest useful set of tests for changed observable behavior and consequential failure cases. Test through real public interfaces with independently known expected results; avoid tests that mirror the implementation, mocks of internal collaborators and duplicate coverage. Existing tests or a targeted executable check can suffice when they already establish the behavior; explain that choice. TDD is optional: use test-first when helpful, but test ordering is not a delivery requirement.
 

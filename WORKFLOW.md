@@ -81,6 +81,8 @@ Before changing or reviewing authorization, record lookups or ownership paramete
 
 Before Rails feature implementation, repair or review, read /Users/smh/dev/healthie-platform/docs/agents/rails-guidance.md and the applicable skill files linked there. That canonical policy preserves Pundit, Devise, Redis and the existing Developer/QA contract over conflicting upstream defaults. Pass the policy and relevant skill references to QA; it applies to older ticket clones as well.
 
+Steven's coding preference: keep associations free of presentation ordering and preloads. Write explicit `.order(...)` with the required sort columns/tie-breaker and needed preloads at the query call site; use plain associations rather than association/default-scope ordering or ordering-only scopes. Include this rule in the QA assignment and check it during self-review and QA. It applies even when an older ticket clone lacks ADR 0003.
+
 Verify the project slug matches tracker.project_slug above, the issue is Todo or In Progress, the implemented gate grants this ticket ownership, and prerequisites meet the triage policy before editing. Move a claimed Todo issue to In Progress. Apply the laptop-local app/database/cache contract and activation checks in docs/operations.md.
 
 Use linear_graphql for reads/comments and linear_transition_issue for EVERY state change.

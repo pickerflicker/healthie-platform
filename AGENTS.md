@@ -4,6 +4,10 @@ Rails interview pre-work with laptop-local infrastructure. Use this repository's
 
 The execution team remains Developer (parent and sole application implementation owner) plus one independent QA subagent. One ticket holds the project slot through implementation, QA and human review.
 
+## Coding preference: explicit query ordering
+
+Steven wants ordering visible in each query: keep associations free of presentation ordering and preloads, and write explicit `.order(...)` plus needed preloads in the controller or model query method. Keep sort columns and deterministic tie-breakers visible instead of hiding them in an ordering-only scope or `default_scope`. Developer self-review and QA check this preference. [ADR 0003](docs/adr/0003-explicit-query-ordering.md) records the rationale.
+
 ## Required reading
 
 - Before planning or changing scope, read [CONTEXT.md](CONTEXT.md) for accepted product decisions and interview boundaries.
