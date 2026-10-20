@@ -31,3 +31,11 @@ Native Ruby/Node tooling uses `mise exec -- bin/bootstrap`, `mise exec -- bin/ch
 `mise exec -- bin/reset-test-data healthie_test` resets only the disposable local test database and its cache namespace. It rejects other target names and remote database hosts. Ordinary preview/start/check never reset development data. Do not remove the volume to rehearse or test a feature.
 
 Playwright runs headed Chromium by default on this Mac. Its own test Rails server binds to 127.0.0.1:3100 with RAILS_ENV=test. CI uses headless Chromium and uploads its HTML report, trace and actual screenshots as the PR's durable QA artifact. Artifact retention is 30 days; retain/reupload required interview evidence before expiry. Domain seeds will be added with their entities.
+
+## Native Symphony controls
+
+`bin/setup-symphony` copies the installed Symphony source into ignored project runtime storage, applies the checked-in dispatch gate, builds it, and runs focused gate tests. The original source checkout remains untouched. Supply SYMPHONY_SOURCE_DIR to use another compatible source; installation refuses an unknown tracker interface. Stop before rebuilding. LINEAR_API_KEY is inherited in memory, never written by the launcher.
+
+`bin/symphony start|status|stop` controls the native process and records its PID under ignored tmp/symphony. Dashboard/state API: http://127.0.0.1:4010/ and /api/v1/state. Logs are under tmp/symphony. `pause` and `resume` persistently close/open **new dispatch**; stop the process as well to interrupt existing execution.
+
+The gate polls Linear for project review/blocked/active ownership, persists the selected issue UUID atomically, and releases it only after Done. Feedback Todo can only resume that UUID; canceled/missing owners fail closed for operator resolution. Blockers must explicitly be Done, including before resuming In Progress. The pause marker and owner survive runtime restart. Tracker errors fail closed. A separate operator reviews QA/CI and merges under the scoped overnight delegation.

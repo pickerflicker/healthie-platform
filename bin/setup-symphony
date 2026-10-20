@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+set -euo pipefail
+cd "$(dirname "$0")/.."
+source_dir="${SYMPHONY_SOURCE_DIR:-/Users/smh/dev/symphony/elixir}"
+runtime="$PWD/tmp/symphony/runtime"
+if [[ -f tmp/symphony/pid ]] && kill -0 "$(cat tmp/symphony/pid)" 2>/dev/null; then
+  echo 'Stop local Symphony before rebuilding its runtime.' >&2; exit 1
+fi
+mkdir -p "$runtime"
+rsync -a "$source_dir/" "$runtime/"
+python3 script/symphony/install_gate.py "$runtime"
+(cd "$runtime" && mise trust && mise install && mise exec -- mix compile --force && mise exec -- mix escript.build)
+(cd "$runtime" && mise exec -- elixir "$OLDPWD/script/symphony/gate_test.exs")
