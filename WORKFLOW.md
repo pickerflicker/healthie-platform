@@ -76,7 +76,7 @@ At completion post a concise Developer Handoff with the QA report link and move 
 
 ## Scoped overnight operator authority
 
-Read docs/overnight-delegation.md. For PIC-274 through PIC-281 the coordinating operator may queue, review and merge on Steven's behalf. Developer still stops in In Review with independent QA evidence; the operator reviews and merges. Do not auto-merge your own work.
+Overnight delegation was revoked by Steven on 2026-10-20; read docs/overnight-delegation.md. Steven selects Todo work and reviews/merges PRs manually. The currently authorized ticket may finish QA and stop In Review. Do not queue or merge on Steven’s behalf without a new request.
 
 ## Local runtime handles
 

@@ -49,3 +49,5 @@ The gate polls Linear for project review/blocked/active ownership, persists the 
 ## Token and retry bounds
 
 Both roles use GPT-6.1 Sol at low effort. A completed notification with failed/interrupted status is a failure, never a success continuation. One automatic recovery is allowed; a second consecutive worker failure writes a persistent dispatch pause and a concise `tmp/symphony/gate/checkpoint.json`. Successful turns clear consecutive failures. Four continuation turns without leaving active state also pause dispatch. The operator diagnoses the checkpoint, fixes the underlying cause and uses `bin/symphony resume`; it must not blindly clear an unchanged checkpoint on every heartbeat. Ticket ownership and preview remain intact.
+
+GitHub/Linear completion convention and verified fallback: [github-linear.md](github-linear.md).
