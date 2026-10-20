@@ -84,9 +84,9 @@ provider name and plan, ordered by enrollment creation time then ID, both descen
 uses it after Pundit scopes the client; `client.providers` remains a raw
 ActiveRecord association. The provider directory dropdown is also queried live.
 
-Redis keys are `healthie:<environment>:clients/<client ID>/provider-list/v2`, with
+Redis keys are `healthie:<environment>:clients/<client ID>/provider-list/v1`, with
 an explicit one-minute expiry on each provider-list write. The first read fetches
-the enrollment result with provider/user preloads; subsequent reads reuse it. Enrollment commits (including plan updates) delete
+the enrollment result with a joined scalar projection; subsequent reads reuse it. Enrollment commits (including plan updates) delete
 affected client keys. Provider name commits delete keys for all enrolled clients.
 Email is not cached. The list uses ordinary `Rails.cache.fetch`; the application
 reads it outside write transactions. Rolled-back relationship/name writes do not

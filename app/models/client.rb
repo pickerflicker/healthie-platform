@@ -10,7 +10,7 @@ class Client < ApplicationRecord
   before_destroy :retain_account_profile
 
   def self.provider_list_cache_key(client_id)
-    "clients/#{client_id}/provider-list/v2"
+    "clients/#{client_id}/provider-list/v1"
   end
 
   def provider_list

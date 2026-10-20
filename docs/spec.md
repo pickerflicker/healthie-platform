@@ -155,8 +155,8 @@ Use Docker Desktop and one shared Compose stack for Rails, PostgreSQL and Redis.
 Both enrolled lists use `enrollments.created_at DESC, enrollments.id DESC`.
 Relationship age, rather than User or profile creation/update time, determines
 position. A removed and re-added enrollment gets a new position. Provider-facing
-lists preload `client: :user`; the client provider-list query preloads
-`provider: :user` before projecting serializable display rows into Redis. Cache
+lists preload `client: :user`; the client provider-list query uses joins and
+pluck to project serializable display rows into Redis. Cache
 hits preserve that array order; committed membership changes invalidate it.
 Authorization continues to query current enrollments independently of display data.
-The v2 cache key prevents reuse of payloads ordered under the previous contract.
+Retain the v1 cache key and its one-minute expiry; existing payloads expire naturally.
