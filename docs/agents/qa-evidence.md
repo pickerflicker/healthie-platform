@@ -4,19 +4,11 @@ Publish one canonical PR Conversation comment with marker `<!-- healthie-qa-repo
 
 ## QA ownership and completion
 
-QA owns the test-case table, captures and accurate results. If QA cannot publish through its available tools, return the complete report and ignored artifact paths to Developer for publication; retain QA's actual session identity and findings. Developer verifies publication before the review handoff.
+QA owns creating and maintaining the test-case table, real captures, accurate results and screenshot uploads in the canonical PR comment. If QA cannot publish through its tools, return the report and ignored artifact paths to Developer for publication while retaining QA's actual session identity and findings. QA handles routine publishing corrections and reports genuine failures honestly.
 
-Evidence publication is complete only when:
+Developer uses QA's outcome and report link for the existing handoff. There is no separate Developer/operator validation or approval of the report's table, test-case rows, image URLs or GitHub rendering. Do not add a publication-validation test case or workpad checkpoint, keep a PR draft, or mark a ticket Blocked merely while waiting for that extra check. GitHub browser access is not a prerequisite for publishing QA evidence. This supersedes the earlier publication-validation gates, including PIC-279's browser-rendering gate.
 
-1. QA has inspected the actual local captures. The supported GitHub attachment upload succeeds for every required screenshot. Re-read the saved canonical comment through the authenticated CLI/API: confirm the tested revision, expected test rows, valid Markdown table structure, and embedded GitHub attachment URLs corresponding to every uploaded capture. No local image paths or unresolved upload placeholders remain.
-2. The staged changes and final PR diff contain no generated QA evidence; run the repository guard for both applicable comparisons.
-3. The PR description and Linear QA Workpad link directly to that comment. Repairs update the same report and identify the revision actually retested. Missing/failed uploads, a malformed table or a known broken attachment remain publication gaps to fix before handoff.
-
-### Browser rendering is supplemental
-
-Opening GitHub to inspect the rendered comment is optional when permitted browser access is already available. Unavailable or declined GitHub browser access alone does not block publication, make the PR stay draft or justify moving a ticket to Blocked when the checks above pass. Record `GitHub rendering: NOT RUN (supplemental)` if it was not checked; do not label it PASS or conflate successful upload/saved-body checks with visual rendering. An observed rendering/attachment defect still needs repair.
-
-GitHub browser permission is separate from the application's required Playwright browser acceptance. This change does not relax feature testing or screenshot requirements. Respect a denied browser origin; do not retry it or use alternate browser/image-fetch routes to bypass the denial. Verify the permitted upload and saved-comment operations above instead, without claiming that they check rendering. This policy supersedes the earlier mandatory rendered-table/all-images check that blocked PIC-279.
+Required feature tests, honest QA outcomes, the report and screenshots remain QA responsibilities. Keep generated evidence out of Git and run the artifact guards. The PR description and Linear QA Workpad link directly to the report; repairs update the same report and identify the revision actually retested.
 
 ## Report contract
 
@@ -41,11 +33,11 @@ gh pr comment PR_NUMBER --repo pickerflicker/healthie-platform \
   --body-file report.md --attach ./provider-home.png --attach ./client-home.png
 ```
 
-GitHub CLI uploads the images and rewrites the local image references to GitHub attachment URLs. This preserves private repository access controls and adds no Git blobs. Verify the saved comment contains uploaded image URLs and all expected table rows before removing any old source-tree evidence. Do not use repository `blob`/`raw` image links, local paths, base64 images or expiring Actions download URLs as the inline screenshots.
+GitHub CLI uploads the images and rewrites the local image references to GitHub attachment URLs. This preserves private repository access controls and adds no Git blobs. Do not use repository `blob`/`raw` image links, local paths, base64 images or expiring Actions download URLs as the inline screenshots.
 
-Before publishing, find the existing comment by marker. To update it, upload new images in a temporary marked comment, replace the canonical comment's body using the resulting uploaded URLs, verify it, then delete only that temporary comment. Never edit/delete unrelated comments. `--edit-last` is appropriate only after verifying that the last comment is the canonical QA report.
+Before publishing, find the existing comment by marker. To update it, upload new images in a temporary marked comment, replace the canonical comment's body using the resulting uploaded URLs, then delete only that temporary comment. Never edit/delete unrelated comments. `--edit-last` is appropriate only after verifying that the last comment is the canonical QA report.
 
-CI artifacts may retain full HTML reports/traces as a secondary diagnostic download; they expire under the configured retention and are not the canonical report. The PR body and Linear QA workpad must link directly to the canonical comment. Linear keeps its concise result/tested revision/link and backend-check explanation. A missing screenshot upload is a publication gap; report it rather than silently putting evidence in Git or claiming completion.
+CI artifacts may retain full HTML reports/traces as a secondary diagnostic download; they expire under the configured retention and are not the canonical report. The PR body and Linear QA workpad must link directly to the canonical comment. Linear keeps its concise result/tested revision/link and backend-check explanation. QA reports failed uploads honestly and handles corrections; screenshots still belong on the PR, never in Git.
 
 ## Repository guard
 

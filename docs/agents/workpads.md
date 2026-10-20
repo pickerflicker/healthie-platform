@@ -41,4 +41,4 @@ Skip repeated acceptance criteria, policy-reading inventories, routine gate chec
 **Run:** Session · model · effort · Fast · base/candidate.
 ```
 
-QA uses the same layout with **Findings** instead of Changes and its own checks, tested revision and session. State behavior and publication outcomes separately when one remains incomplete.
+QA uses the same layout with **Findings** instead of Changes and its own checks, tested revision and session. Include the QA outcome and report link. Mention publication only for a genuine unresolved publishing failure; omit routine report-content/rendering validation checkpoints.
