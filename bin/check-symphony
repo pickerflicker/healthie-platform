@@ -10,3 +10,4 @@ if [[ ! -d "$source_dir" ]]; then
 fi
 
 (cd "$source_dir" && mise exec -- elixir "$project_root/script/symphony/gate_test.exs")
+(cd "$source_dir" && mise exec -- sh -lc 'cd "$1" && exec ./script/check_nested_toolchain' sh "$project_root")

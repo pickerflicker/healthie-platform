@@ -32,11 +32,15 @@ Native Ruby/Node tooling uses `mise exec -- bin/bootstrap`, `mise exec -- bin/ch
 
 Playwright runs headed Chromium by default on this Mac. Its own test Rails server binds to 127.0.0.1:3100 with RAILS_ENV=test. CI uses headless Chromium and uploads its HTML report, trace and actual screenshots as the PR's durable QA artifact. Artifact retention is 30 days; retain/reupload required interview evidence before expiry. Domain seeds will be added with their entities.
 
+When a managed worker cannot launch macOS GUI processes, the operator runs `bin/qa-browser-host start` from a native terminal. QA then runs `env -u CI HEALTHIE_QA_BROWSER_WS_FILE=/Users/smh/dev/healthie-platform/tmp/symphony/browser-ws mise exec -- bin/acceptance`. The file is a local control secret: it is mode 0600 under ignored runtime state and its contents must never be printed or published. Playwright still creates an isolated test context and drives the headed Chromium process; `bin/qa-browser-host stop` remains an operator lifecycle action.
+
 ## Native Symphony controls
 
 `bin/setup-symphony` copies the installed Symphony source into ignored project runtime storage, applies the checked-in dispatch gate, builds it, and runs focused gate tests. The original source checkout remains untouched. Supply SYMPHONY_SOURCE_DIR to use another compatible source; installation refuses an unknown tracker interface. Stop before rebuilding. LINEAR_API_KEY is inherited in memory, never written by the launcher.
 
 Run `bin/check-symphony` for the complete deterministic gate seam without rebuilding or interrupting the live scheduler. It covers Todo claim and safe idle, review/Blocked reconstruction, persistent pause, same-ticket feedback resume, duplicate ownership, Done release, tracker failure and prerequisite states (including canceled-but-undelivered blockers).
+
+The focused check also enters the project from a cold login shell, activates mise, and verifies that a nested Bash child resolves the pinned Ruby and Node. Symphony's create/before-run hooks and Codex launcher activate mise before invoking child scripts so a login shell cannot fall back to system Ruby or an unrelated Node installation.
 
 `bin/symphony start|status|stop` controls the native process and records its PID under ignored tmp/symphony. Dashboard/state API: http://127.0.0.1:4010/ and /api/v1/state. Logs are under tmp/symphony. `pause` and `resume` persistently close/open **new dispatch**; stop the process as well to interrupt existing execution.
 

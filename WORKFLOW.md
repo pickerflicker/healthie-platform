@@ -26,17 +26,23 @@ hooks:
     fi
     mise trust
     mise install
-    mise exec -- bin/bootstrap
+    eval "$(mise activate bash)"
+    bin/bootstrap
   before_run: |
-    mise exec -- ruby --version
-    mise exec -- bundle check
+    eval "$(mise activate bash)"
+    script/check_nested_toolchain
+    bundle check
   timeout_ms: 600000
 agent:
   max_concurrent_agents: 1
   max_turns: 0
   max_retry_backoff_ms: 300000
 codex:
-  command: mise exec -- codex --strict-config --config shell_environment_policy.inherit=all --config 'model="gpt-5.6-sol"' --config model_reasoning_effort=high --config agents.max_concurrent_threads_per_session=2 --config agents.max_depth=1 app-server
+  command: >-
+    mise exec -- bash -lc 'eval "$(mise activate bash)";
+    exec codex --strict-config --config shell_environment_policy.inherit=all
+    --config "model=\"gpt-5.6-sol\"" --config model_reasoning_effort=high
+    --config agents.max_concurrent_threads_per_session=2 --config agents.max_depth=1 app-server'
   approval_policy: never
   thread_sandbox: workspace-write
   turn_sandbox_policy:
