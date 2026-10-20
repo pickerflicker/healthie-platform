@@ -85,6 +85,8 @@ Verify the project slug matches tracker.project_slug above, the issue is Todo or
 
 Use linear_graphql for reads/comments and linear_transition_issue for EVERY state change.
 
+Before claiming work or switching between Developer and QA, follow /Users/smh/dev/healthie-platform/docs/agents/triage-labels.md#agent-processing-labels. Developer maintains one current phase label, switching for QA and repairs and clearing both before In Review/Blocked. This canonical policy applies to older ticket clones; labels never authorize dispatch.
+
 Before creating/editing a delivery PR description or handing off, follow /Users/smh/dev/healthie-platform/docs/github-linear.md and verify the saved body retains the correct closing reference. On resume, an already-merged PR requires completion reconciliation before any implementation or QA loop.
 
 ## Local runtime handles
