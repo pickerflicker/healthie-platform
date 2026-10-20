@@ -1,5 +1,5 @@
 class Client < ApplicationRecord
-  has_many :journal_entries, inverse_of: :client, dependent: :destroy
+  has_many :journal_entries, dependent: :destroy
   belongs_to :user, inverse_of: :client
   delegate :name, :email, to: :user
   validates :user_id, uniqueness: true
