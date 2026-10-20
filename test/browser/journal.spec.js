@@ -14,6 +14,8 @@ test('client journal persisted CRUD journey', async ({ page }, testInfo) => {
   await page.getByRole('link', { name: 'New journal entry' }).click();
   await page.getByLabel('Entry text').fill('QA journal: a walk outside.\nFeeling refreshed.');
   await page.getByRole('button', { name: 'Save entry' }).click();
+  await expect(page).toHaveURL(/\/journal_entries\/\d+$/);
+  await expect(page.getByRole('heading', { name: 'Journal entry', exact: true })).toBeVisible();
   await expect(page.locator('main')).toContainText('QA journal: a walk outside.');
   const entryURL = page.url();
   await page.reload();
@@ -22,6 +24,8 @@ test('client journal persisted CRUD journey', async ({ page }, testInfo) => {
   await page.getByRole('link', { name: 'Edit entry' }).click();
   await page.getByLabel('Entry text').fill('QA journal: updated after lunch.');
   await page.getByRole('button', { name: 'Save entry' }).click();
+  await expect(page).toHaveURL(entryURL);
+  await expect(page.getByRole('heading', { name: 'Journal entry', exact: true })).toBeVisible();
   await page.reload();
   await expect(page.locator('main')).toContainText('QA journal: updated after lunch.');
   await page.screenshot({ path: testInfo.outputPath('journal-edited.png'), fullPage: true });
