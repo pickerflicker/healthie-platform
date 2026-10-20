@@ -6,9 +6,41 @@ on:
 jobs:
   check:
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: healthie
+          POSTGRES_PASSWORD: healthie_local_only
+          POSTGRES_DB: healthie_test
+        ports: ["55432:5432"]
+        options: --health-cmd "pg_isready -U healthie" --health-interval 3s --health-timeout 3s --health-retries 20
+      redis:
+        image: redis:7-alpine
+        ports: ["56379:6379"]
     steps:
       - uses: actions/checkout@v6
       - uses: ruby/setup-ruby@v1
         with:
           bundler-cache: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: bin/rails db:prepare
+        env:
+          RAILS_ENV: test
       - run: bin/check
+      - run: bin/acceptance
+        env:
+          CI: true
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: qa-evidence
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 30

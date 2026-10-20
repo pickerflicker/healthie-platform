@@ -30,3 +30,7 @@
 .env*
 !.env.example
 .bundle/
+
+node_modules/
+playwright-report/
+test-results/

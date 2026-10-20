@@ -2,3 +2,6 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 bundle check || bundle install
+npm ci
+bin/rails db:prepare
+RAILS_ENV=test bin/rails db:prepare

@@ -47,3 +47,6 @@ group :development do
   # Use console on exceptions pages [https://github.com/rails/web-console]
   gem "web-console"
 end
+
+gem "pg", "~> 1.6"
+gem "redis", "~> 5.4"
