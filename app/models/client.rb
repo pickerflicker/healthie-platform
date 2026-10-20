@@ -20,9 +20,9 @@ class Client < ApplicationRecord
   private
 
   def query_provider_list
-    enrollments.order(created_at: :desc, id: :desc).preload(provider: :user).map do |enrollment|
-      { enrollment_id: enrollment.id, provider_id: enrollment.provider_id,
-        name: enrollment.provider.name, plan: enrollment.plan }
+    enrollments.joins(provider: :user).order(created_at: :desc, id: :desc)
+      .pluck(:id, :provider_id, "users.name", :plan).map do |enrollment_id, provider_id, name, plan|
+        { enrollment_id: enrollment_id, provider_id: provider_id, name: name, plan: plan }
     end
   end
 

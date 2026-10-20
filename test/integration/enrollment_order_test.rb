@@ -75,7 +75,7 @@ class EnrollmentOrderTest < ActionDispatch::IntegrationTest
       end
       Rails.cache.delete(Client.provider_list_cache_key(@client.id))
       cold = user_selects { assert_equal 3, @client.provider_list.size }
-      assert_equal 1, cold.size, "cold cache loads all provider users together"
+      assert_equal 1, cold.size, "cold cache projects all provider names in one joined query"
       warm = user_selects { assert_equal 3, @client.provider_list.size }
       assert_empty warm, "warm cache contains serializable display values"
     end
@@ -94,7 +94,7 @@ class EnrollmentOrderTest < ActionDispatch::IntegrationTest
 
   def user_selects
     queries = []
-    callback = ->(event) { queries << event.payload[:sql] if event.payload[:sql].match?(/SELECT.*FROM "users"/m) }
+    callback = ->(event) { queries << event.payload[:sql] if event.payload[:sql].match?(/SELECT.*(?:FROM|JOIN) "users"/m) }
     ActiveSupport::Notifications.subscribed(callback, "sql.active_record") { yield }
     queries
   end
