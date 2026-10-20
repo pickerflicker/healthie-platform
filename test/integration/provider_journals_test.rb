@@ -67,17 +67,16 @@ class ProviderJournalsTest < ActionDispatch::IntegrationTest
     get journal_entries_path
     assert_select "article", count: 0
     get client_journal_entries_path(@client)
-    assert_response :not_found
+    assert_unavailable_page
     [ journal_entry_path(@entry), edit_journal_entry_path(@entry) ].each do |path|
       get path
-      assert_response :not_found
-      assert_no_match @entry.text, response.body
+      assert_unavailable_page
     end
     assert_no_difference "JournalEntry.count" do
       patch journal_entry_path(@entry), params: { journal_entry: { text: "forged", client_id: @other.id } }
-      assert_response :not_found
+      assert_unavailable_page
       delete journal_entry_path(@entry)
-      assert_response :not_found
+      assert_unavailable_page
     end
     assert_equal expected, @client.journal_entries.order(:id).pluck(:id, :text)
   end
@@ -92,5 +91,16 @@ class ProviderJournalsTest < ActionDispatch::IntegrationTest
     assert_response :not_found
     assert_empty JournalEntryPolicy::Scope.new(nil, JournalEntry.all).resolve
     assert_empty ClientPolicy::Scope.new(nil, Client.all).resolve
+  end
+
+  private
+
+  def assert_unavailable_page
+    assert_response :not_found
+    assert_select "main h1", text: "Page not found"
+    assert_select "main a[href=?]", root_path, text: "Return home"
+    assert_no_match @entry.text, response.body
+    assert_no_match @client.name, response.body
+    assert_no_match "ActiveRecord::RecordNotFound", response.body
   end
 end

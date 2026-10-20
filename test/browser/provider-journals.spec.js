@@ -53,7 +53,10 @@ test('seeded provider combined feed, shared client journal, plans and unrelated 
   await expect(page.locator('article')).toHaveCount(3);
   await expect(page.locator('main')).not.toContainText('Tried a new breakfast');
   expect((await page.goto(samJournal)).status()).toBe(404);
+  await expect(page.getByRole('heading', { name: 'Page not found', exact: true })).toBeVisible();
   await page.screenshot({ path: testInfo.outputPath('unrelated-denied.png'), fullPage: true });
+  await page.getByRole('link', { name: 'Return home', exact: true }).click();
+  await expect(page).toHaveURL(/\/providers\/\d+$/);
 });
 
 test('normal client/provider sign-ins grant historical journal access then revoke direct and feed reads', async ({ page }, testInfo) => {
@@ -105,5 +108,13 @@ test('normal client/provider sign-ins grant historical journal access then revok
   expect((await page.request.patch(entryURL, { form: { 'journal_entry[text]': 'removed provider' } })).status()).toBe(404);
   expect((await page.request.delete(entryURL)).status()).toBe(404);
   expect((await page.goto(entryURL)).status()).toBe(404);
+  await expect(page.getByRole('heading', { name: 'Page not found', exact: true })).toBeVisible();
+  await expect(page.locator('main')).not.toContainText('Walked after breakfast');
+  await expect(page.locator('body')).not.toContainText('ActiveRecord::RecordNotFound');
   await page.screenshot({ path: testInfo.outputPath('direct-access-revoked.png'), fullPage: true });
+  await page.getByRole('link', { name: 'Return home', exact: true }).click();
+  await expect(page).toHaveURL(/\/providers\/\d+$/);
+  expect((await page.goto(clientJournalURL)).status()).toBe(404);
+  await expect(page.getByRole('heading', { name: 'Page not found', exact: true })).toBeVisible();
+  await page.screenshot({ path: testInfo.outputPath('client-journal-access-revoked.png'), fullPage: true });
 });
