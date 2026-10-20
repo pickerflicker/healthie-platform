@@ -5,7 +5,7 @@ Maintain one Developer Workpad and one QA Workpad per ticket, updated in place. 
 ## Format
 
 - Use Markdown headings, short bullets, descriptive links and a small check/result table. Put blank lines around headings, lists and tables. Use real newlines, never literal `\n` text.
-- Start with **Status** and the current PR/tested commit. A blocker belongs near the top with its owner and exact unblock action.
+- Start with **Status** and the current PR/tested commit. QA always includes a clickable **Preview** address near the top under the [preview handoff requirements](qa-evidence.md#human-review-preview). A blocker belongs near the top with its owner and exact unblock action.
 - Aim for 150–250 words per workpad; use fewer when sufficient. Add detail only for a concrete unresolved finding or reproduction that cannot be conveyed by a direct evidence link.
 - Keep **Changes / Findings** to three short bullets. Give **Checks** one row per meaningful check, with counts or the important observed result. Distinguish PASS, FAIL, NOT RUN and evidence reported by another role from checks actually performed by this role.
 - End with one compact **Run** line: actual session identity, model, effort, Fast setting and base/tested commit. QA records its own session and parent identity. Long identifiers are metadata, not narrative.
@@ -41,4 +41,4 @@ Skip repeated acceptance criteria, policy-reading inventories, routine gate chec
 **Run:** Session · model · effort · Fast · base/candidate.
 ```
 
-QA uses the same layout with **Findings** instead of Changes and its own checks, tested revision and session. Include the QA outcome and report link. Mention publication only for a genuine unresolved publishing failure; omit routine report-content/rendering validation checkpoints.
+QA uses the same layout with **Findings** instead of Changes and its own checks, tested revision and session. Include the QA outcome, report link and a **Preview:** line with the actual clickable development server URL for human verification. Mention publication only for a genuine unresolved publishing failure; omit routine report-content/rendering validation checkpoints.

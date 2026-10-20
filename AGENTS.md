@@ -4,6 +4,12 @@ Rails interview pre-work with laptop-local infrastructure. Use this repository's
 
 The execution team remains Developer (parent and sole application implementation owner) plus one independent QA subagent. One ticket holds the project slot through implementation, QA and human review.
 
+## Coding preferences: query ordering and loading
+
+Steven wants ordering visible in each query: keep associations free of presentation ordering and preloads, and write explicit `.order(...)` plus needed preloads in the controller or model query method. Keep sort columns and deterministic tie-breakers visible instead of hiding them in an ordering-only scope or `default_scope`. Developer self-review and QA check this preference. [ADR 0003](docs/adr/0003-explicit-query-ordering.md) records the rationale.
+
+For scalar display/cache payloads, Steven prefers a SQL projection: select needed columns with `pluck`, join related tables when needed, then map values into hashes. Use model objects with query-local preloading when callers need model behavior or association traversal. Preserve a working `joins + pluck` query during an ordering change; a generic eager-loading/N+1 requirement does not justify replacing it with `preload + map` over full records. Self-review and QA verify the chosen shape avoids per-row queries.
+
 ## Required reading
 
 - Before planning or changing scope, read [CONTEXT.md](CONTEXT.md) for accepted product decisions and interview boundaries.

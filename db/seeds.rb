@@ -16,11 +16,17 @@ User.transaction do
 end
 
 Enrollment.transaction do
-  [ [ "provider", "client", "basic" ], [ "second-provider", "client", "premium" ],
-    [ "provider", "unrelated-client", "premium" ] ].each do |provider_login, client_login, plan|
+  # Account/profile ages deliberately disagree with enrollment age. The provider-facing
+  # relationships tie on time so their enrollment IDs decide the displayed order.
+  [ [ "provider", "client", "basic", "2026-10-18T09:00:00Z" ],
+    [ "second-provider", "client", "premium", "2026-10-19T09:00:00Z" ],
+    [ "provider", "unrelated-client", "premium", "2026-10-18T09:00:00Z" ] ].each do |provider_login, client_login, plan, timestamp|
     provider = User.find_by!(email: "#{provider_login}@healthie.example").provider
     client = User.find_by!(email: "#{client_login}@healthie.example").client
-    Enrollment.find_or_create_by!(provider: provider, client: client) { |enrollment| enrollment.plan = plan }
+    Enrollment.find_or_create_by!(provider: provider, client: client) do |enrollment|
+      enrollment.plan = plan
+      enrollment.created_at = Time.iso8601(timestamp)
+    end
   end
 end
 
@@ -34,3 +40,7 @@ JournalEntry.transaction do
     client.journal_entries.find_or_create_by!(created_at: Time.iso8601(timestamp), text: text)
   end
 end
+
+# Seeds may restore relationships or identity data; never retain an earlier list.
+# RedisCacheStore#clear is restricted to this project's current-env namespace.
+Rails.cache.clear

@@ -149,3 +149,14 @@ Use Docker Desktop and one shared Compose stack for Rails, PostgreSQL and Redis.
 - PIC-271 and PIC-272 retain earlier skeleton setup/smoke evidence and are currently In Review. Reconcile their review status before local dispatch so historical setup issues do not create ambiguous slot ownership. Do not treat them as validation of the new local runtime or silently mark them merged/completed.
 - Publish this spec as a planning parent in Backlog, not as claimable implementation work. Create the approved implementation breakdown separately; retain native dependencies and enough acceptance/validation context for fresh agent sessions. No implementation ticket is activated by spec publication.
 - Keep the repository copy and the published Linear spec synchronized, and include the planning documents, glossary and ADRs in version control through the normal review path. The PR remains the canonical location for per-ticket QA evidence; do not duplicate full QA reports in Linear.
+
+## Enrollment list ordering
+
+Both enrolled lists use `enrollments.created_at DESC, enrollments.id DESC`.
+Relationship age, rather than User or profile creation/update time, determines
+position. A removed and re-added enrollment gets a new position. Provider-facing
+lists preload `client: :user`; the client provider-list query uses joins and
+pluck to project serializable display rows into Redis. Cache
+hits preserve that array order; committed membership changes invalidate it.
+Authorization continues to query current enrollments independently of display data.
+Retain the v1 cache key and its one-minute expiry; existing payloads expire naturally.

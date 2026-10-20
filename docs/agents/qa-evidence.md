@@ -10,6 +10,10 @@ Developer uses QA's outcome and report link for the existing handoff. There is n
 
 Required feature tests, honest QA outcomes, the report and screenshots remain QA responsibilities. Keep generated evidence out of Git and run the artifact guards. The PR description and Linear QA Workpad link directly to the report; repairs update the same report and identify the revision actually retested.
 
+## Human review preview
+
+QA always posts the actual clickable development server address in both the Linear QA Workpad and the canonical PR QA report, including for backend-only tickets. Verify that the preview responds before handoff and leave it running throughout human review. Use the development preview (normally `http://127.0.0.1:3000`), not Playwright’s temporary test server. Include the relevant screen path and seeded account identifier when useful; never publish secrets. Report an unavailable preview honestly with the concrete blocker instead of presenting an unverified address as working. Update both locations if the address changes.
+
 ## Report contract
 
 The comment contains the tested commit, actual QA session/model, overall result and a table with these columns:
