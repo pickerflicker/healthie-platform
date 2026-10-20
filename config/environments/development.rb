@@ -26,7 +26,11 @@ Rails.application.configure do
   end
 
   # Change to :null_store to avoid any caching.
-  config.cache_store = :memory_store
+  config.cache_store = :redis_cache_store, {
+    url: ENV.fetch("REDIS_URL", "redis://127.0.0.1:56379/0"),
+    namespace: "healthie:#{Rails.env}",
+    expires_in: 1.hour
+  }
 
   # Don't care if the mailer can't send.
   config.action_mailer.raise_delivery_errors = false
