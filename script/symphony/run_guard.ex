@@ -8,7 +8,30 @@ defmodule SymphonyElixir.RunGuard do
     end
   end
 
-  def record_success(id), do: with_root(fn root -> File.rm(failure_file(root, id)); :ok end)
+  def begin_attempt(id) do
+    with_root(fn root ->
+      file = failure_file(root, id) <> ".attempts"
+      count = case File.read(file) do
+        {:ok, value} -> String.to_integer(String.trim(value))
+        {:error, :enoent} -> 0
+      end
+      if count >= 2 do
+        checkpoint(root, id, "automatic_attempt_budget_exhausted")
+        {:error, :automatic_attempt_budget_exhausted}
+      else
+        File.write!(file, Integer.to_string(count + 1))
+        :ok
+      end
+    end)
+  end
+
+  def record_success(id) do
+    with_root(fn root ->
+      File.rm(failure_file(root, id))
+      File.rm(failure_file(root, id) <> ".attempts")
+      :ok
+    end)
+  end
 
   def record_failure(id) do
     with_root(fn root ->

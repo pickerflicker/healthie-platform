@@ -32,4 +32,13 @@ defmodule RunGuardTest do
     RunGuard.turn_limit("issue")
     assert File.exists?(Path.join(root, "paused"))
   end
+  test "killed sessions cannot bypass the automatic attempt budget", %{root: root} do
+    assert :ok = RunGuard.begin_attempt("killed")
+    assert :ok = RunGuard.begin_attempt("killed")
+    assert {:error, :automatic_attempt_budget_exhausted} = RunGuard.begin_attempt("killed")
+    assert File.exists?(Path.join(root, "paused"))
+    RunGuard.record_success("recovered")
+    assert :ok = RunGuard.begin_attempt("recovered")
+  end
+
 end

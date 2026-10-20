@@ -42,5 +42,9 @@ s=s.replace(old,new,1)
 old='''Logger.info("Reached agent.max_turns for #{issue_context(refreshed_issue)} with issue still active; returning control to orchestrator")'''
 new=old+'''\n          SymphonyElixir.RunGuard.turn_limit(issue.id)'''
 if old not in s: raise SystemExit('Unknown worker limit handler; refusing patch')
+s=s.replace(old,new,1)
+old="case run_on_worker_host(issue, codex_update_recipient, opts, worker_host) do"
+new="case (with :ok <- SymphonyElixir.RunGuard.begin_attempt(issue.id), do: run_on_worker_host(issue, codex_update_recipient, opts, worker_host)) do"
+if old not in s: raise SystemExit('Unknown worker attempt handler; refusing patch')
 p.write_text(s.replace(old,new,1))
 shutil.copyfile(project/'script/symphony/retry_protocol_test.exs', root/'test/symphony_elixir/healthie_retry_protocol_test.exs')
