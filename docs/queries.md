@@ -83,16 +83,21 @@ uses it after Pundit scopes the client; `client.providers` remains a raw
 ActiveRecord association. The provider directory dropdown is also queried live.
 
 Redis keys are `healthie:<environment>:clients/<client ID>/provider-list/v1`, with
-the environment store's one-hour expiry. The first read fetches the joined result;
-subsequent reads reuse it. Enrollment commits (including plan updates) delete
+an explicit one-minute expiry on each provider-list write. The first read fetches
+the joined result; subsequent reads reuse it. Enrollment commits (including plan updates) delete
 affected client keys. Provider name commits delete keys for all enrolled clients.
-Email is not cached. Reads inside a database transaction query directly without
-reading or writing Redis, so a rollback cannot publish uncommitted membership.
+Email is not cached. The list uses ordinary `Rails.cache.fetch`; the application
+reads it outside write transactions. Rolled-back relationship/name writes do not
+invalidate or publish changed membership. Calling this display query inside a
+write transaction is outside the supported flow: a cold fetch could cache
+uncommitted data, and a warm fetch could return the pre-transaction list.
 Seeds clear only this project's current-environment cache namespace after loading.
 
 This small local app uses synchronous after-commit invalidation and Redis's Rails
-store fallback to database queries on cache read failure. Expiry bounds stale
-display data if a Redis invalidation fails; it is not the normal refresh mechanism.
+store fallback to database queries on cache read failure. If a crash or Redis
+failure prevents invalidation, a written entry expires within one minute of its
+write; expiry is not the normal refresh mechanism. Entries written before the
+one-minute TTL change retain their old expiry unless invalidated or cleared.
 Bulk SQL skips model callbacks, so maintenance scripts must clear the relevant
 project cache as seeds do. This is ordinary cache-aside behavior: it does not
 serialize concurrent cache fills against commits across processes. Distributed

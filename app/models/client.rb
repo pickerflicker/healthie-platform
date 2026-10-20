@@ -14,10 +14,7 @@ class Client < ApplicationRecord
   end
 
   def provider_list
-    # Never publish a transaction's uncommitted membership, even on a cache miss.
-    return query_provider_list if self.class.current_transaction.open?
-
-    Rails.cache.fetch(self.class.provider_list_cache_key(id)) { query_provider_list }
+    Rails.cache.fetch(self.class.provider_list_cache_key(id), expires_in: 1.minute) { query_provider_list }
   end
 
   private

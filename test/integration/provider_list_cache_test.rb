@@ -35,16 +35,24 @@ class ProviderListCacheTest < ActionDispatch::IntegrationTest
     assert_includes events, "cache_generate.active_support"
     assert_includes events, "cache_fetch_hit.active_support"
     redis = Redis.new(url: ENV.fetch("REDIS_URL", "redis://127.0.0.1:56379/0"))
-    assert redis.exists?("healthie:test:#{Client.provider_list_cache_key(@client.id)}")
+    redis_key = "healthie:test:#{Client.provider_list_cache_key(@client.id)}"
+    assert redis.exists?(redis_key)
+    assert_includes 1..60, redis.ttl(redis_key), "Provider-list entries must expire within one minute of writing"
     assert_empty @other.provider_list
     assert_equal [ @provider.id ], @client.provider_list.pluck(:provider_id)
     assert_equal [ @provider.id ], @client.providers.pluck(:id), "raw association remains available"
   end
 
   test "committed add remove and plan changes invalidate only the affected client" do
-    @client.provider_list
+    original = @client.provider_list
     @other.provider_list
     other_key = Client.provider_list_cache_key(@other.id)
+    Enrollment.transaction do
+      @enrollment.destroy!
+      raise ActiveRecord::Rollback
+    end
+    assert_equal original, Rails.cache.read(Client.provider_list_cache_key(@client.id))
+    assert_equal original, @client.provider_list
     extra = @client.enrollments.create!(provider: @extra, plan: :premium)
     assert_nil Rails.cache.read(Client.provider_list_cache_key(@client.id))
     assert_equal [], Rails.cache.read(other_key)
@@ -64,7 +72,6 @@ class ProviderListCacheTest < ActionDispatch::IntegrationTest
     [ @client, @other ].each(&:provider_list)
     User.transaction do
       @provider.user.update!(name: "Rolled back")
-      assert_equal [ "Rolled back" ], @client.provider_list.pluck(:name)
       raise ActiveRecord::Rollback
     end
     assert_equal [ "cache-provider" ], @client.provider_list.pluck(:name)
@@ -88,26 +95,6 @@ class ProviderListCacheTest < ActionDispatch::IntegrationTest
     [ @client, @other ].each { |client| assert_nil Rails.cache.read(Client.provider_list_cache_key(client.id)) }
     assert_empty @client.provider_list
     assert_equal [ "premium" ], @other.provider_list.pluck(:plan)
-  end
-
-  test "transaction reads bypass warm cache and rollback cannot populate a cold cache" do
-    key = Client.provider_list_cache_key(@client.id)
-    original = @client.provider_list
-    Enrollment.transaction do
-      @client.enrollments.create!(provider: @extra)
-      assert_equal [ @provider.id, @extra.id ], @client.provider_list.pluck(:provider_id)
-      assert_equal original, Rails.cache.read(key)
-      raise ActiveRecord::Rollback
-    end
-    assert_equal original, @client.provider_list
-    Rails.cache.delete(key)
-    Enrollment.transaction do
-      @enrollment.destroy!
-      assert_empty @client.provider_list
-      assert_nil Rails.cache.read(key)
-      raise ActiveRecord::Rollback
-    end
-    assert_equal original, @client.provider_list
   end
 
   test "warm display cache cannot grant removed provider journal or feed access" do
