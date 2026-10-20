@@ -35,6 +35,9 @@ node_modules/
 playwright-report/
 test-results/
 
+# Generated QA evidence belongs in PR comments/attachments, never new Git files.
+/docs/qa/
+
 # Python helpers used by the agent launcher.
 __pycache__/
 *.py[cod]

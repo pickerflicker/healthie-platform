@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+set -euo pipefail
+cd "$(dirname "$0")/.."
+
+if [[ $# -eq 0 ]]; then
+  files=(git diff --cached --name-only --diff-filter=ACMR -z)
+elif [[ $# -eq 2 && "$1" == --base ]]; then
+  git rev-parse --verify "$2^{commit}" >/dev/null
+  files=(git diff "$2...HEAD" --name-only --diff-filter=ACMR -z)
+else
+  echo 'Usage: bin/check-qa-artifacts [--base COMMIT]' >&2
+  exit 2
+fi
+
+# Capture separately so a Git failure cannot disappear inside process substitution.
+list=$(mktemp)
+trap 'rm -f "$list"' EXIT
+"${files[@]}" > "$list"
+failed=0
+while IFS= read -r -d '' path; do
+  case "$path" in
+    docs/qa/*|test-results/*|playwright-report/*|qa-artifacts/*|tmp/qa-reports/*)
+      echo "Generated QA evidence must be uploaded to the PR, not committed: $path" >&2
+      failed=1
+      ;;
+  esac
+done < "$list"
+exit "$failed"

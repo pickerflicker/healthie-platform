@@ -66,6 +66,8 @@ Read AGENTS.md, CONTEXT.md, docs/agent-team.md, docs/agents/issue-tracker.md and
 
 For the current role and execution-setting policies, read /Users/smh/dev/healthie-platform/docs/agent-team.md and /Users/smh/dev/healthie-platform/docs/agents/execution-settings.md. These canonical policies govern if an existing ticket clone or generic ticket boilerplate predates the agreed updates. Preserve the issue's feature-specific acceptance criteria. Read the non-secret selected-settings receipt at /Users/smh/dev/healthie-platform/tmp/symphony/launch-settings/{{ issue.identifier }}.json and record the selection in your Workpad; the receipt is not evidence of completed QA.
 
+Before generating or publishing QA evidence, read /Users/smh/dev/healthie-platform/docs/agents/qa-evidence.md. Use one PR comment with the test-case table and embedded uploaded screenshots; never commit per-run reports, screenshots or traces. Existing ticket clones must follow this canonical policy even if their local instructions show older repository-linked reports.
+
 Verify the project slug matches tracker.project_slug above, the issue is Todo or In Progress, the implemented gate grants this ticket ownership, and prerequisites meet the triage policy before editing. Move a claimed Todo issue to In Progress. Apply the laptop-local app/database/cache contract and activation checks in docs/operations.md.
 
 Use linear_graphql for reads/comments and linear_transition_issue for EVERY state change.

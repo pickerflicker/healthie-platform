@@ -8,6 +8,7 @@ The execution team remains Developer (parent and sole application implementation
 
 - Before planning or changing scope, read [CONTEXT.md](CONTEXT.md) for accepted product decisions and interview boundaries.
 - Before implementation, QA or reviewing delivery evidence, read [docs/agent-team.md](docs/agent-team.md). It owns role responsibilities, delegation, validation and reporting requirements.
+- Before generating, publishing or reviewing QA evidence, read [docs/agents/qa-evidence.md](docs/agents/qa-evidence.md). Reports and uploaded screenshots belong in one PR comment; generated evidence must stay out of Git.
 - Before publishing or fetching tracker work, read [docs/agents/issue-tracker.md](docs/agents/issue-tracker.md) for the existing Linear project and publishing conventions.
 - Before authoring execution settings or changing the agent launcher, read [docs/agents/execution-settings.md](docs/agents/execution-settings.md) for the ticket format and fixed-model/effort/Fast contract.
 - Before claiming work, changing status or handing off a ticket, read [docs/agents/triage-labels.md](docs/agents/triage-labels.md). It owns readiness, dependencies, slot ownership, repair limits and review/merge lifecycle.
