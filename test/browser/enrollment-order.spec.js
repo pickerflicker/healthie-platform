@@ -1,4 +1,19 @@
 const { test, expect } = require('@playwright/test');
+const { execFileSync } = require('node:child_process');
+
+test.beforeEach(() => {
+  execFileSync('bin/rails', ['runner', `
+    abort 'Test environment required' unless Rails.env.test? && ActiveRecord::Base.connection_db_config.database == 'healthie_test'
+    provider = User.find_by!(email: 'provider@healthie.example').provider
+    client = User.find_by!(email: 'client@healthie.example').client
+    second = User.find_by!(email: 'second-provider@healthie.example').provider
+    sam = User.find_by!(email: 'unrelated-client@healthie.example').client
+    [[provider, client, Time.utc(2026,10,17)], [provider, sam, Time.utc(2026,10,18)], [second, client, Time.utc(2026,10,19)]].each do |p,c,time|
+      Enrollment.find_by!(provider: p, client: c).update!(created_at: time)
+    end
+    Rails.cache.delete(Client.provider_list_cache_key(client.id))
+  `], { env: { ...process.env, RAILS_ENV: 'test' }, stdio: 'pipe' });
+});
 
 async function signIn(page, login) {
   await page.goto('/users/sign_in');
@@ -7,8 +22,8 @@ async function signIn(page, login) {
   await page.getByRole('button', { name: 'Sign in', exact: true }).click();
 }
 
-// Runs against the isolated, freshly seeded test database, never development.
-test('enrollment age and ID ties order both visible lists; re-enrollment refreshes warm cache', async ({ page }, testInfo) => {
+// Normalize only these synthetic test relationships; earlier journeys may re-enroll them.
+test('enrollment age orders both visible lists; re-enrollment refreshes warm cache', async ({ page }, testInfo) => {
   await signIn(page, 'provider');
   await page.getByRole('link', { name: 'My clients', exact: true }).click();
   await expect(page.locator('tbody tr td:first-child')).toHaveText(['Sam Chen', 'Alex Rivera']);
