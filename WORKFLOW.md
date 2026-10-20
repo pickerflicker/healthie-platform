@@ -83,6 +83,8 @@ Before Rails feature implementation, repair or review, read /Users/smh/dev/healt
 
 Steven's coding preference: keep associations free of presentation ordering and preloads. Write explicit `.order(...)` with the required sort columns/tie-breaker and needed preloads at the query call site; use plain associations rather than association/default-scope ordering or ordering-only scopes. Include this rule in the QA assignment and check it during self-review and QA. It applies even when an older ticket clone lacks ADR 0003.
 
+Choose query shape by the consumer: scalar display/cache rows use needed-column `pluck` with joins as needed, mapped into hashes; consumers needing model behavior/association traversal use model objects with explicit preloads. Retain working `joins + pluck` during ordering changes rather than materializing records solely to satisfy generic eager-loading wording. The N+1 requirement is bounded database work, not mandatory use of `preload` for projected rows. Pass this preference to QA and verify actual query behavior; record any necessary departure with its concrete reason in the Workpad.
+
 Verify the project slug matches tracker.project_slug above, the issue is Todo or In Progress, the implemented gate grants this ticket ownership, and prerequisites meet the triage policy before editing. Move a claimed Todo issue to In Progress. Apply the laptop-local app/database/cache contract and activation checks in docs/operations.md.
 
 Use linear_graphql for reads/comments and linear_transition_issue for EVERY state change.
