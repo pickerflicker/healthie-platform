@@ -21,15 +21,21 @@ defmodule SymphonyElixir.ProjectGate do
   end
 
   defp select(candidates, held, nil, slot) do
-    cond do
-      Enum.any?(held, &(&1.state in ["In Review", "Blocked"])) -> {:ok, []}
-      length(held) > 1 -> {:error, :multiple_project_owners}
-      held != [] -> claim(candidates, hd(held), slot)
-      true ->
-        case Enum.find(candidates, &ready?/1) do
+    case held do
+      [issue] when issue.state in ["In Review", "Blocked"] ->
+        hold(issue, slot)
+
+      [issue] ->
+        resume(candidates, issue, slot)
+
+      [] ->
+        case Enum.find(candidates, &(dispatchable?(&1) and ready?(&1))) do
           nil -> {:ok, []}
           issue -> claim(candidates, issue, slot)
         end
+
+      _ ->
+        {:error, :multiple_project_owners}
     end
   end
 
@@ -38,23 +44,73 @@ defmodule SymphonyElixir.ProjectGate do
       case issues do
         [%{state: "Done"}] ->
           File.rm!(slot)
-          select(candidates, held, nil, slot)
+
+          select(
+            Enum.reject(candidates, &(&1.id == owner)),
+            Enum.reject(held, &(&1.id == owner)),
+            nil,
+            slot
+          )
+
         [%{state: state} = issue] when state in ["Todo", "In Progress"] ->
-          if Enum.any?(held, &(&1.id != owner)), do: {:ok, []}, else: claim(candidates, issue, slot)
+          if Enum.any?(held, &(&1.id != owner)),
+            do: {:error, :multiple_project_owners},
+            else: claim(candidates, issue, slot)
+
+        [%{state: state}] when state in ["In Review", "Blocked"] ->
+          if Enum.any?(held, &(&1.id != owner)),
+            do: {:error, :multiple_project_owners},
+            else: {:ok, []}
+
         _ -> {:ok, []}
       end
     end
   end
 
   defp claim(candidates, issue, slot) do
-    if ready?(issue) do
-      File.write!(slot <> ".new", issue.id <> "\n")
-      File.rename!(slot <> ".new", slot)
-      {:ok, Enum.filter(candidates, &(&1.id == issue.id))}
+    if dispatchable?(issue) and ready?(issue) do
+      with :ok <- persist_owner(slot, issue.id) do
+        {:ok, Enum.filter(candidates, &(&1.id == issue.id))}
+      end
     else
       {:ok, []}
     end
   end
 
+  defp resume(candidates, issue, slot) do
+    with :ok <- persist_owner(slot, issue.id) do
+      if dispatchable?(issue) and ready?(issue),
+        do: {:ok, Enum.filter(candidates, &(&1.id == issue.id))},
+        else: {:ok, []}
+    end
+  end
+
+  defp hold(issue, slot) do
+    with :ok <- persist_owner(slot, issue.id), do: {:ok, []}
+  end
+
+  defp persist_owner(slot, issue_id) do
+    case File.open(slot, [:write, :exclusive]) do
+      {:ok, file} ->
+        result = IO.write(file, issue_id <> "\n")
+        File.close(file)
+        result
+
+      {:error, :eexist} ->
+        case File.read(slot) do
+          {:ok, existing} ->
+            if String.trim(existing) == issue_id,
+              do: :ok,
+              else: {:error, :owner_claim_race}
+
+          {:error, reason} -> {:error, {:owner_read_failed, reason}}
+        end
+
+      {:error, reason} ->
+        {:error, {:owner_write_failed, reason}}
+    end
+  end
+
+  defp dispatchable?(issue), do: issue.state in ["Todo", "In Progress"]
   defp ready?(issue), do: Enum.all?(issue.blocked_by, &(&1.state == "Done"))
 end

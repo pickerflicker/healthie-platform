@@ -8,8 +8,12 @@ pidfile=state/'pid'; gate=state/'gate';gate.mkdir(exist_ok=True)
 command=sys.argv[1] if len(sys.argv)>1 else 'status'
 def alive():
  try:
-  pid=int(pidfile.read_text());os.kill(pid,0);return pid
- except (FileNotFoundError,ProcessLookupError):return None
+  pid=int(pidfile.read_text())
+ except (FileNotFoundError,PermissionError,ValueError):return None
+ try:
+  os.kill(pid,0);return pid
+ except PermissionError:return pid
+ except ProcessLookupError:return None
 if command=='start':
  if alive(): raise SystemExit('Symphony is already running')
  if not os.environ.get('LINEAR_API_KEY'): raise SystemExit('LINEAR_API_KEY missing')

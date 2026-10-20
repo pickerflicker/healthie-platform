@@ -36,6 +36,8 @@ Playwright runs headed Chromium by default on this Mac. Its own test Rails serve
 
 `bin/setup-symphony` copies the installed Symphony source into ignored project runtime storage, applies the checked-in dispatch gate, builds it, and runs focused gate tests. The original source checkout remains untouched. Supply SYMPHONY_SOURCE_DIR to use another compatible source; installation refuses an unknown tracker interface. Stop before rebuilding. LINEAR_API_KEY is inherited in memory, never written by the launcher.
 
+Run `bin/check-symphony` for the complete deterministic gate seam without rebuilding or interrupting the live scheduler. It covers Todo claim and safe idle, review/Blocked reconstruction, persistent pause, same-ticket feedback resume, duplicate ownership, Done release, tracker failure and prerequisite states (including canceled-but-undelivered blockers).
+
 `bin/symphony start|status|stop` controls the native process and records its PID under ignored tmp/symphony. Dashboard/state API: http://127.0.0.1:4010/ and /api/v1/state. Logs are under tmp/symphony. `pause` and `resume` persistently close/open **new dispatch**; stop the process as well to interrupt existing execution.
 
 The gate polls Linear for project review/blocked/active ownership, persists the selected issue UUID atomically, and releases it only after Done. Feedback Todo can only resume that UUID; canceled/missing owners fail closed for operator resolution. Blockers must explicitly be Done, including before resuming In Progress. The pause marker and owner survive runtime restart. Tracker errors fail closed. A separate operator reviews QA/CI and merges under the scoped overnight delegation.
