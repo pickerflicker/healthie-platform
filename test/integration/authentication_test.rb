@@ -75,4 +75,28 @@ class AuthenticationTest < ActionDispatch::IntegrationTest
     assert_select "main", text: /client@healthie.example/
     assert_select "main", text: /other@example.com/, count: 0
   end
+
+  test "provider policy independently enforces record ownership and role" do
+    provider = User.find_by!(role: "provider")
+    client = User.find_by!(role: "client")
+    other = User.create_account!(name: "Other Provider", email: "other-provider@example.com", password: "test-password-123", role: "provider")
+
+    assert ProviderPolicy.new(provider, provider.provider).show?
+    assert_not ProviderPolicy.new(provider, other.provider).show?
+    assert_not ProviderPolicy.new(other, provider.provider).show?
+    assert_not ProviderPolicy.new(client, provider.provider).show?
+    assert_not ProviderPolicy.new(nil, provider.provider).show?
+  end
+
+  test "provider home authorizes own loaded profile despite forged record parameters" do
+    other = User.create_account!(name: "Other Provider", email: "other-provider@example.com", password: "test-password-123", role: "provider")
+    post user_session_path, params: { user: { email: "provider@healthie.example", password: "Healthie-demo-2026" } }
+
+    get provider_home_path, params: { id: other.provider.id, provider_id: other.provider.id, user_id: other.id, role: "client" }
+    assert_response :success
+    assert_select "h1", "Provider home"
+    assert_select "main", text: /Morgan Patel/
+    assert_select "main", text: /provider@healthie.example/
+    assert_select "main", text: /other-provider@example.com/, count: 0
+  end
 end

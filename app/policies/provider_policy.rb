@@ -1,6 +1,6 @@
 class ProviderPolicy < ApplicationPolicy
   def show?
-    user&.provider?
+    user&.provider? && record.user_id == user.id
   end
 
   class Scope < ApplicationPolicy::Scope
