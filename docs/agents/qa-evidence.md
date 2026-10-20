@@ -2,6 +2,16 @@
 
 Publish one canonical PR Conversation comment with marker `<!-- healthie-qa-report -->`. Update that same comment after repairs rather than creating a report per feature revision. This policy supersedes older instructions that linked to committed `docs/qa` reports/screenshots.
 
+## QA ownership and completion
+
+QA owns the test-case table, captures and accurate results. If QA cannot publish through its available tools, return the complete report and ignored artifact paths to Developer for publication; retain QA's actual session identity and findings. Developer verifies publication before the review handoff.
+
+Evidence publication is complete only when:
+
+1. The saved PR comment contains the tested revision, results table and required uploaded screenshots; verify the rendered table and that each image loads with repository access.
+2. The staged changes and final PR diff contain no generated QA evidence; run the repository guard for both applicable comparisons.
+3. The PR description and Linear QA Workpad link directly to that comment. Repairs update the same report and identify the revision actually retested. An upload or rendering failure remains an explicit publication gap.
+
 ## Report contract
 
 The comment contains the tested commit, actual QA session/model, overall result and a table with these columns:
