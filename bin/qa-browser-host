@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Control the operator-owned headed Playwright browser without exposing its endpoint."""
+"""Control the operator-owned Playwright browser without exposing its endpoint."""
 from pathlib import Path
 import os
 import signal
@@ -45,7 +45,7 @@ if command == "start":
     pidfile.write_text(str(process.pid))
     for _ in range(50):
         if endpoint.exists():
-            print(f"Headed QA browser PID {process.pid}; endpoint file {endpoint}")
+            print(f"QA browser PID {process.pid}; endpoint file {endpoint}")
             break
         if process.poll() is not None:
             raise SystemExit(f"QA browser host failed; inspect {logfile}")

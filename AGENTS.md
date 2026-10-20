@@ -2,7 +2,7 @@
 
 Rails interview pre-work. Read `CONTEXT.md` for the agreed scope, architecture and interview-specific operating rules. Read `docs/operations.md` before local runtime setup. Validate the local runtime and single-ticket dispatch gate before activating implementation; documented plans are not proof that infrastructure is running.
 
-Exactly two execution roles: Developer (parent and implementation owner) and one independent QA subagent. QA uses headed Playwright Chromium and may write tests/evidence, but does not edit application source. Developer repairs QA findings. Keep the same role sessions during a repair loop; no additional reviewer or recursive delegation.
+Exactly two execution roles: Developer (parent and implementation owner) and one independent QA subagent. QA uses headless Playwright Chromium by default (Steven’s 2026-10-20 change supersedes older headed-browser ticket wording) and may write tests/evidence, but does not edit application source. Developer repairs QA findings. Keep the same role sessions during a repair loop; no additional reviewer or recursive delegation.
 
 Run one ticket through implementation, QA and human review before starting another, including independent work. Follow the status rules in `docs/agents/triage-labels.md`. Preserve the active ticket workspace, branch, PR, database and review preview. Steven manually merges PRs. After two unsuccessful repair cycles, record reproduction evidence and move the ticket to Blocked; resume the same ticket when Steven adds feedback and returns it to Todo. Use guarded Linear transitions during Symphony execution.
 

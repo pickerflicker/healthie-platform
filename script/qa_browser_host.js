@@ -15,7 +15,7 @@ async function close() {
 }
 
 async function main() {
-  browserServer = await chromium.launchServer({ headless: false });
+  browserServer = await chromium.launchServer({ headless: process.env.HEADED !== 'true', host: '127.0.0.1' });
   fs.mkdirSync(path.dirname(endpointFile), { recursive: true });
   fs.writeFileSync(endpointFile, `${browserServer.wsEndpoint()}\n`, { mode: 0o600 });
 

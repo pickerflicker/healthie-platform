@@ -18,7 +18,7 @@ module.exports = defineConfig({
   reporter: [['list'], ['html', {open: 'never'}]],
   use: {
     browserName: 'chromium',
-    headless: process.env.CI === 'true',
+    headless: process.env.HEADED !== 'true',
     screenshot: 'on',
     trace: 'retain-on-failure',
     baseURL: 'http://127.0.0.1:3100',

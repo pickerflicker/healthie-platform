@@ -10,7 +10,7 @@ The employer requires provider/client data, many-to-many provider relationships 
 
 Provide a local Rails application with seeded provider and client accounts, a straightforward server-rendered interface, explicit domain relationships, and directly runnable examples of the four required queries. Clients manage their journals and provider relationships. Providers inspect their associated clients, plans and journal feeds. Enforce access through Devise authentication and Pundit authorization, and demonstrate a narrowly scoped Redis cache for a client's provider list.
 
-Use Docker Desktop and one shared Compose stack for Rails, PostgreSQL and Redis. Run Symphony natively on macOS, polling the existing Linear project every ten seconds. Exactly one Developer and one independent QA agent handle one ticket through implementation, headed Chromium acceptance and Steven's human review. Preserve the preview during review, publish the canonical QA report on the PR, and wait for Steven's manual merge before proceeding to another ticket.
+Use Docker Desktop and one shared Compose stack for Rails, PostgreSQL and Redis. Run Symphony natively on macOS, polling the existing Linear project every ten seconds. Exactly one Developer and one independent QA agent handle one ticket through implementation, headless Chromium acceptance and Steven's human review. Preserve the preview during review, publish the canonical QA report on the PR, and wait for Steven's manual merge before proceeding to another ticket.
 
 ## User Stories
 
@@ -56,7 +56,7 @@ Use Docker Desktop and one shared Compose stack for Rails, PostgreSQL and Redis.
 40. As a project owner, I want exactly one ticket in flight through human review, so that work stays understandable and the shared preview is stable.
 41. As a project owner, I want dependent tickets to wait for prerequisites to be manually merged and marked Done, so that there are no stacked PRs to manage.
 42. As a developer, I want the Developer agent to record notable assumptions in the ticket, so that decisions are visible rather than silently invented.
-43. As a project owner, I want independent QA to run headed Playwright Chromium, so that I can watch the browser interactions during the demonstration.
+43. As a project owner, I want independent QA to run headless Playwright Chromium, so that acceptance runs unattended while retaining screenshots; visible runs are available on demand.
 44. As a reviewer, I want a canonical PR QA report containing real screenshots, acceptance results and the tested commit, so that I can evaluate the behavior and code together.
 45. As a project owner, I want only a concise QA outcome, tested commit and report link in Linear, so that there are not two competing full reports.
 46. As a reviewer, I want the tested app left running while the ticket is In Review, so that I can browse it before merging.
@@ -116,7 +116,7 @@ Use Docker Desktop and one shared Compose stack for Rails, PostgreSQL and Redis.
 
 ## Testing Decisions
 
-- The primary acceptance boundary is a real browser driving the local Rails app and its database-backed behavior. Use Playwright Chromium in headed mode for all local QA runs so Steven can observe actions. Validate observable outcomes, persistence and denied access; screenshots accompany assertions rather than substitute for them.
+- The primary acceptance boundary is a real browser driving the local Rails app and its database-backed behavior. Use Playwright Chromium in headless mode by default; use HEADED=true for an explicitly requested visible demonstration. Validate observable outcomes, persistence and denied access; screenshots accompany assertions rather than substitute for them.
 - This boundary follows the testing approach already agreed during the design session. Supplement it only where the browser cannot directly prove an invariant: focused Rails model/database checks, request/policy checks, cache integration checks and scheduler lifecycle checks. Avoid introducing a new abstraction merely to make a test possible.
 - Test login/logout and distinct role navigation with normal seeded credentials. Cover journal creation, reading, editing and deletion; own and unrelated records; provider read-only access; and direct unauthorized HTTP requests rather than only hidden links.
 - Test the four required queries against a fixture dataset that includes shared clients, different plans, empty results, multiple entry dates and tied timestamps. Verify membership, no unintended duplication, and creation-time/ID ordering. Verify an edited entry retains creation-based position.
