@@ -24,6 +24,19 @@
   </head>
 
   <body>
-    <%= yield %>
+    <header>
+      <strong>Healthie</strong>
+      <% if user_signed_in? %>
+        <nav aria-label="Account">
+          <%= link_to "#{current_user.role.titleize} home", current_user.provider? ? provider_home_path : client_home_path %>
+          <%= button_to "Sign out", destroy_user_session_path, method: :delete %>
+        </nav>
+      <% end %>
+    </header>
+    <main>
+      <% if notice %><p role="status"><%= notice %></p><% end %>
+      <% if alert %><p role="alert"><%= alert %></p><% end %>
+      <%= yield %>
+    </main>
   </body>
 </html>
