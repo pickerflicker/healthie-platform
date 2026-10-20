@@ -53,8 +53,8 @@ class AuthenticationTest < ActionDispatch::IntegrationTest
   end
 
   test "client policy independently enforces record ownership and role" do
-    client = User.find_by!(role: "client")
-    provider = User.find_by!(role: "provider")
+    client = User.find_by!(email: "client@healthie.example")
+    provider = User.find_by!(email: "provider@healthie.example")
     other = User.create_account!(name: "Other", email: "other@example.com", password: "test-password-123", role: "client")
 
     assert ClientPolicy.new(client, client.client).show?

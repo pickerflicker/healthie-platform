@@ -5,6 +5,7 @@ async function signIn(page, login) {
   await page.getByLabel('Email').fill(`${login}@healthie.example`);
   await page.getByLabel('Password', { exact: true }).fill('Healthie-demo-2026');
   await page.getByRole('button', { name: 'Sign in', exact: true }).click();
+  await expect(page).toHaveURL(login.includes('provider') ? /\/provider$/ : /\/client$/);
 }
 
 test('client Basic/Premium enrollment flow and provider read-only boundaries', async ({ page, browser }, testInfo) => {
