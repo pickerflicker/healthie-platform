@@ -1,21 +1,26 @@
 <h1><%= current_user.client? ? "My providers" : "My clients" %></h1>
-<% if @enrollments.empty? %>
+<% if current_user.client? %>
+  <%= render "provider_list", providers: @provider_list, enrollment: @enrollment %>
+<% elsif @enrollments.empty? %>
   <p>No current relationships.</p>
 <% else %>
   <table>
-    <thead><tr><th><%= current_user.client? ? "Provider" : "Client" %></th><th>Plan</th><% if current_user.client? %><th>Action</th><% end %></tr></thead>
+    <thead><tr><th>Client</th><th>Plan</th></tr></thead>
     <tbody>
       <% @enrollments.each do |enrollment| %>
         <tr>
-          <td><%= current_user.client? ? enrollment.provider.name : enrollment.client.name %></td>
+          <td>
+            <%= link_to enrollment.client.name, client_journal_entries_path(enrollment.client) %>
+          </td>
           <td><%= enrollment.plan.humanize %></td>
-          <% if policy(enrollment).destroy? %>
-            <td><%= button_to "Remove #{enrollment.provider.name}", enrollment_path(enrollment), method: :delete %></td>
-          <% end %>
         </tr>
       <% end %>
     </tbody>
   </table>
+<% end %>
+
+<% if current_user.provider? %>
+  <p><%= link_to "Combined journal feed", journal_entries_path %></p>
 <% end %>
 
 <% if @enrollment && policy(@enrollment).create? %>

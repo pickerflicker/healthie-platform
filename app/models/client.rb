@@ -9,7 +9,22 @@ class Client < ApplicationRecord
   validate :immutable_account, on: :update
   before_destroy :retain_account_profile
 
+  def self.provider_list_cache_key(client_id)
+    "clients/#{client_id}/provider-list/v1"
+  end
+
+  def provider_list
+    Rails.cache.fetch(self.class.provider_list_cache_key(id), expires_in: 1.minute) { query_provider_list }
+  end
+
   private
+
+  def query_provider_list
+    enrollments.joins(provider: :user).order(created_at: :desc, id: :desc)
+      .pluck(:id, :provider_id, "users.name", :plan).map do |enrollment_id, provider_id, name, plan|
+        { enrollment_id: enrollment_id, provider_id: provider_id, name: name, plan: plan }
+    end
+  end
 
   def matching_role
     errors.add(:user, "must be a client without a provider profile") unless user&.client? && user.provider.nil?

@@ -6,13 +6,17 @@ These agreed role and execution policies supersede older generic ticket boilerpl
 
 ## Developer and delegation
 
+Developer maintains the current Linear processing-phase label at claim, QA handoff, repair and stop under [triage-labels.md](agents/triage-labels.md#agent-processing-labels). Include this phase contract in the QA assignment; QA confirms its phase while validating.
+
 Developer is Symphony's parent session and sole application implementation owner. Read the complete issue and the domain documents required by [AGENTS.md](../AGENTS.md). State the approach and log notable assumptions on the issue before editing; implement only its acceptance criteria with small, explainable changes.
 
 On resume, Developer must complete [the PR feedback sequence](agents/pr-feedback.md) before editing or declaring that no changes are needed. Include its feedback disposition list in the QA assignment; QA verifies every actionable request against the candidate and appropriate evidence before handoff.
 
 For authorization changes, Developer and QA follow [authorization.md](agents/authorization.md); include that policy in the QA assignment and use its focused access checks during self-review and independent validation.
 
-For Rails feature work, both roles follow [rails-guidance.md](agents/rails-guidance.md), read the applicable imported skills with Healthie's overrides, and include those references in the QA assignment. Apply them within the existing self-review and independent QA steps.
+For Rails feature work, both roles follow [rails-guidance.md](agents/rails-guidance.md), read the applicable imported skills with Healthie's overrides, and include those references in the QA assignment. Self-review and QA explicitly check Steven's preference for plain associations and query-local `.order(...)`/preloads with visible sort columns and tie-breakers; flag hidden ordering in associations, `default_scope` or ordering-only scopes. Apply this within the existing review steps.
+
+Also check query shape against the consumer: scalar display/cache payloads should retain needed-column SQL projections; model consumers should preload accessed associations. Flag replacement of an adequate `joins + pluck` query with full-record `preload + map` merely for generic eager-loading wording or an unrelated ordering change. Verify absence of per-row queries without requiring preloads for projections. Include this preference in the existing QA assignment.
 
 Write the smallest useful set of tests for changed observable behavior and consequential failure cases. Test through real public interfaces with independently known expected results; avoid tests that mirror the implementation, mocks of internal collaborators and duplicate coverage. Existing tests or a targeted executable check can suffice when they already establish the behavior; explain that choice. TDD is optional: use test-first when helpful, but test ordering is not a delivery requirement.
 
@@ -38,4 +42,4 @@ Maintain one Developer Workpad and one QA Workpad in Linear, updated in place us
 
 The main issue description is the sole acceptance checklist. Only Developer checks criteria, after matching independent QA evidence. Before generating or publishing evidence, read [qa-evidence.md](agents/qa-evidence.md). QA owns publishing the canonical report as one PR Conversation comment with a test-case/results table and embedded GitHub-uploaded screenshots when visual evidence applies. Developer uses QA's outcome and report link; no separate report-content or rendering validation gate is required. Keep generated reports, screenshots and traces out of Git; committed report/image links do not satisfy this contract. Linear gets a concise QA outcome, tested commit and direct comment link. For backend validation, briefly explain in the QA Workpad what was checked, why and expected versus observed results; put full commands/queries and inputs in the linked PR report. Update the same comment after feedback. A runtime checkpoint is not a passed QA result.
 
-Before the Developer Handoff, Developer and QA verify the saved PR description still has the correct closing reference under [github-linear.md](github-linear.md), including after any description rewrite. Complete the handoff with the QA report link, then follow [triage-labels.md](agents/triage-labels.md) for In Review, preview preservation and human review.
+Before the Developer Handoff, Developer and QA verify the saved PR description still has the correct closing reference under [github-linear.md](github-linear.md), including after any description rewrite. QA always posts the verified development preview URL in its Linear Workpad and canonical PR report and leaves the preview running for human verification under [qa-evidence.md](agents/qa-evidence.md#human-review-preview). Complete the handoff with the QA report link, then follow [triage-labels.md](agents/triage-labels.md) for In Review, preview preservation and human review.

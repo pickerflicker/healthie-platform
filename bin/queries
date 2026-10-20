@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+set -euo pipefail
+cd "$(dirname "$0")/.."
+export PATH="/Applications/Docker.app/Contents/Resources/bin:$PATH"
+exec docker compose exec -T web bin/rails runner script/interview_queries.rb
