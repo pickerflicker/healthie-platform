@@ -189,7 +189,9 @@ class LaunchTests(unittest.TestCase):
              patch.dict(launcher.os.environ, {}, clear=True), redirect_stdout(output):
             with self.assertRaises(Executed): launcher.main([])
         self.assertEqual(output.getvalue(), "")
-        self.assertEqual(execute.call_args.args[0], "/fake/codex")
+        self.assertEqual(execute.call_args.args[0], launcher.sys.executable)
+        self.assertIn(str(launcher.ROOT / "script/symphony/codex_permission_bridge.py"), execute.call_args.args[1])
+        self.assertIn("/fake/codex", execute.call_args.args[1])
         self.assertEqual(execute.call_args.args[1][-1], "app-server")
 
     def test_check_does_not_launch_or_write_receipt(self):

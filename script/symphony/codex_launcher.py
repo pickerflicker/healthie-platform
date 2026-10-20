@@ -1,4 +1,4 @@
-"""Ticket settings -> Codex arguments; no changes to Symphony's protocol."""
+"""Ticket settings -> Codex arguments and the local Git permission adapter."""
 import argparse
 from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
@@ -203,7 +203,8 @@ def main(argv=None):
             return 0
         write_receipt(ROOT / "tmp" / "symphony" / "launch-settings", issue, settings, workspace)
         # Preserve Symphony's process/stdio protocol. No status text on stdout.
-        os.execv(executable, args)
+        bridge = ROOT / "script" / "symphony" / "codex_permission_bridge.py"
+        os.execv(sys.executable, [sys.executable, str(bridge), str(workspace), *args])
     except (LaunchError, OSError) as error:
         message = str(error) if isinstance(error, LaunchError) else "Launcher could not prepare or start Codex."
         print(f"Healthie launcher: {message}", file=sys.stderr)

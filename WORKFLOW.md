@@ -50,8 +50,8 @@ codex:
   thread_sandbox: workspace-write
   turn_sandbox_policy:
     type: workspaceWrite
-    writableRoots:
-      - /Users/smh/dev/healthie-platform-workspaces
+    # The canonical launcher grants only the selected workspace and its .git.
+    writableRoots: []
     networkAccess: true
   turn_timeout_ms: 3600000
   read_timeout_ms: 20000

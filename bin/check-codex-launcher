@@ -2,9 +2,10 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 export PYTHONDONTWRITEBYTECODE=1
-python3 -m unittest discover -s script/symphony -p codex_launcher_test.py -v
+python3 -m unittest discover -s script/symphony -p 'codex_*_test.py' -v
 if [[ "${1:-}" == "--codex" ]]; then
   python3 script/symphony/probe_codex_settings.py
+  python3 script/symphony/probe_codex_permissions.py
 elif [[ $# -gt 0 ]]; then
   echo 'Usage: bin/check-codex-launcher [--codex]' >&2
   exit 2
