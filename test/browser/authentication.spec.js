@@ -1,8 +1,7 @@
 const { test, expect } = require('@playwright/test');
-const path = require('path');
-const evidence = name => path.join(__dirname, '../../docs/qa/PIC-277', name);
 
-test('seeded identities, denied access, tampering and logout', async ({ page }) => {
+test('seeded identities, denied access, tampering and logout', async ({ page }, testInfo) => {
+  const evidence = name => testInfo.outputPath(name);
   for (const target of ['/', '/provider', '/client']) {
     await page.goto(target);
     await expect(page).toHaveURL(/\/users\/sign_in$/);

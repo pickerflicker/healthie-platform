@@ -29,3 +29,5 @@ Single-context layout: `GLOSSARY.md` and `docs/adr/`. Before domain modeling, sp
 Overnight delegation is inactive: Steven revoked it on 2026-10-20. Read `docs/overnight-delegation.md`. Steven handles Todo selection and final review/merge. Finish only the already-authorized ticket and stop In Review; preserve its preview.
 
 Developer and QA: `gpt-6.1-sol`, low reasoning effort (Steven’s explicit choice). Keep QA context focused on the current issue and changed behavior.
+
+Before generating or publishing QA evidence, read `docs/agents/qa-evidence.md`. Publish one PR Conversation comment with the test-case table and embedded uploaded screenshots; generated reports/screenshots/traces must stay out of Git. This supersedes older repository-linked evidence wording.

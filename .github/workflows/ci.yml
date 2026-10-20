@@ -20,6 +20,14 @@ jobs:
         ports: ["56379:6379"]
     steps:
       - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - name: Keep generated QA evidence out of source
+        run: |
+          python3 script/qa_artifact_guard_test.py
+          bin/check-qa-artifacts --base "$BASE_SHA"
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
       - uses: ruby/setup-ruby@v1
         with:
           bundler-cache: true
