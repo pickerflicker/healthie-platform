@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+eval "$(mise activate bash)"
+
+expected_ruby="$(sed 's/^ruby-//' .ruby-version)"
+expected_node="$(awk -F '"' '/^node =/ { print $2 }' mise.toml)"
+
+[[ "$(ruby -e 'print RUBY_VERSION')" == "$expected_ruby" ]]
+[[ "$(node -p 'process.versions.node')" == "$expected_node" ]]
+
+export HEALTHIE_EXPECTED_RUBY="$expected_ruby"
+export HEALTHIE_EXPECTED_NODE="$expected_node"
+bash -c '[[ "$(ruby -e '\''print RUBY_VERSION'\'')" == "$HEALTHIE_EXPECTED_RUBY" ]] && [[ "$(node -p '\''process.versions.node'\'')" == "$HEALTHIE_EXPECTED_NODE" ]]'
+
+echo "Nested shell toolchain uses Ruby $expected_ruby and Node $expected_node"

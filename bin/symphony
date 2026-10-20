@@ -1,0 +1,32 @@
+#!/usr/bin/env python3
+"""Run the project-local native Symphony process without persisting credentials."""
+from pathlib import Path
+import os,signal,subprocess,sys
+root=Path(__file__).resolve().parents[1]
+state=root/'tmp/symphony'; state.mkdir(parents=True,exist_ok=True)
+pidfile=state/'pid'; gate=state/'gate';gate.mkdir(exist_ok=True)
+command=sys.argv[1] if len(sys.argv)>1 else 'status'
+def alive():
+ try:
+  pid=int(pidfile.read_text())
+ except (FileNotFoundError,PermissionError,ValueError):return None
+ try:
+  os.kill(pid,0);return pid
+ except PermissionError:return pid
+ except ProcessLookupError:return None
+if command=='start':
+ if alive(): raise SystemExit('Symphony is already running')
+ if not os.environ.get('LINEAR_API_KEY'): raise SystemExit('LINEAR_API_KEY missing')
+ env=os.environ.copy();env['HEALTHIE_GATE_ROOT']=str(gate)
+ env['PATH']='/Applications/Docker.app/Contents/Resources/bin:'+str(Path(subprocess.check_output(['which','codex'],text=True).strip()).parent)+':'+env['PATH']
+ runtime=state/'runtime'
+ with (state/'console.log').open('ab') as log:
+  p=subprocess.Popen(['mise','exec','--',str(runtime/'bin/symphony'),'--i-understand-that-this-will-be-running-without-the-usual-guardrails','--port','4010','--logs-root',str(state/'logs'),str(root/'WORKFLOW.md')],cwd=runtime,env=env,stdout=log,stderr=log,start_new_session=True)
+ pidfile.write_text(str(p.pid));print(f'Local Symphony PID {p.pid}; state API http://127.0.0.1:4010/api/v1/state')
+elif command=='stop':
+ if (pid:=alive()):os.kill(pid,signal.SIGTERM)
+ pidfile.unlink(missing_ok=True)
+elif command=='pause':(gate/'paused').write_text('operator pause\n')
+elif command=='resume':(gate/'paused').unlink(missing_ok=True)
+elif command=='status':print(f'PID={alive()} paused={(gate/"paused").exists()} owner={(gate/"owner").read_text().strip() if (gate/"owner").exists() else "none"}')
+else:raise SystemExit('Usage: bin/symphony start|stop|pause|resume|status')

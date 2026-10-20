@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+set -euo pipefail
+cd "$(dirname "$0")/.."
+project_root="$PWD"
+source_dir="${SYMPHONY_SOURCE_DIR:-/Users/smh/dev/symphony/elixir}"
+
+if [[ ! -d "$source_dir" ]]; then
+  echo "Symphony source not found: $source_dir" >&2
+  exit 1
+fi
+
+(cd "$source_dir" && mise exec -- mix run --no-start "$project_root/script/symphony/run_guard_test.exs")
+(cd "$source_dir" && mise exec -- elixir "$project_root/script/symphony/gate_test.exs")
+(cd "$source_dir" && mise exec -- sh -lc 'cd "$1" && exec ./script/check_nested_toolchain' sh "$project_root")

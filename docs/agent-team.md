@@ -2,7 +2,7 @@
 
 Developer is Symphony's parent session and sole application implementation owner. Read the issue and relevant glossary/ADRs, log notable assumptions on the issue, implement, self-review and run focused checks. Then use exactly one persistent independent QA subagent in the same ticket workspace. Reuse the QA session for repairs. There is no additional reviewer or recursive delegation.
 
-QA starts/exercises the app with headed Playwright Chromium, verifies acceptance criteria and denied-access boundaries, and captures real screenshots. QA may write tests and evidence; Developer owns application-source edits. Test runs use the isolated test database/cache while the human preview retains its seeded development data.
+QA starts/exercises the app with headless Playwright Chromium, verifies acceptance criteria and denied-access boundaries, and captures real screenshots. QA may write tests and evidence; Developer owns application-source edits. Test runs use the isolated test database/cache while the human preview retains its seeded development data.
 
 Maintain Developer and QA Workpads in Linear with actual session identity, commit, commands/results, findings and outstanding risks. The issue description owns the acceptance checklist; Developer checks it only after matching QA evidence. The PR owns the single canonical QA report/screenshots; Linear contains a concise outcome, tested commit and PR-report link. Recheck and refresh the report after feedback.
 

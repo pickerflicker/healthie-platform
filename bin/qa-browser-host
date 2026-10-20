@@ -1,0 +1,63 @@
+#!/usr/bin/env python3
+"""Control the operator-owned Playwright browser without exposing its endpoint."""
+from pathlib import Path
+import os
+import signal
+import subprocess
+import sys
+import time
+
+root = Path(__file__).resolve().parents[1]
+state = root / "tmp" / "symphony"
+state.mkdir(parents=True, exist_ok=True)
+pidfile = state / "qa-browser.pid"
+endpoint = state / "browser-ws"
+logfile = state / "qa-browser.log"
+command = sys.argv[1] if len(sys.argv) > 1 else "status"
+
+
+def alive():
+    try:
+        pid = int(pidfile.read_text())
+    except (FileNotFoundError, PermissionError, ValueError):
+        return None
+    try:
+        os.kill(pid, 0)
+        return pid
+    except PermissionError:
+        return pid
+    except ProcessLookupError:
+        return None
+
+
+if command == "start":
+    if alive():
+        raise SystemExit("QA browser host is already running")
+    endpoint.unlink(missing_ok=True)
+    with logfile.open("ab") as log:
+        process = subprocess.Popen(
+            ["mise", "exec", "--", "node", "script/qa_browser_host.js", str(endpoint)],
+            cwd=root,
+            stdout=log,
+            stderr=log,
+            start_new_session=True,
+        )
+    pidfile.write_text(str(process.pid))
+    for _ in range(50):
+        if endpoint.exists():
+            print(f"QA browser PID {process.pid}; endpoint file {endpoint}")
+            break
+        if process.poll() is not None:
+            raise SystemExit(f"QA browser host failed; inspect {logfile}")
+        time.sleep(0.1)
+    else:
+        raise SystemExit(f"QA browser host timed out; inspect {logfile}")
+elif command == "stop":
+    if (pid := alive()):
+        os.kill(pid, signal.SIGTERM)
+    pidfile.unlink(missing_ok=True)
+    endpoint.unlink(missing_ok=True)
+elif command == "status":
+    print(f"PID={alive()} endpoint_file_present={endpoint.exists()}")
+else:
+    raise SystemExit("Usage: bin/qa-browser-host start|stop|status")
