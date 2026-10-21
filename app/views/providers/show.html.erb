@@ -1,5 +1,5 @@
 <h1>Provider home</h1>
-<p>Welcome, <%= provider_name(@provider.name, @provider.credentials) %>.</p>
+<p>Welcome <%= provider_name(@provider.name, @provider.credentials) %>.</p>
 <p><%= @provider.email %></p>
 <p>Your provider workspace is ready.</p>
 <% if policy(@provider).edit? %>

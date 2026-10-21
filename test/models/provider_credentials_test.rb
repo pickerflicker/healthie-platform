@@ -16,6 +16,16 @@ class ProviderCredentialsTest < ActiveSupport::TestCase
     assert_equal [], provider.reload.credentials
   end
 
+  test "the complete catalog persists in supported order through model and database writes" do
+    expected = %w[MD DO OD DDS DMD DPM DC RN LPN LVN APRN NP DNP BSN MSN CNM CRNA PA-C RD RDN LD LDN CNS CDCES PhD PsyD LCSW LMFT LPC LMHC LPCC MSW LSW LICSW NCC BCBA PT DPT OTD OTR PTA COTA PharmD RPh AuD CCC-A CCC-SLP ND LAc NBC-HWC]
+    assert_equal expected, Provider::CREDENTIALS.keys
+    provider = create_test_account("provider", "Complete Catalog Provider").provider
+    provider.update!(credentials: expected.reverse + [ "", "PhD", "PA-C" ])
+    assert_equal expected, provider.reload.credentials
+    Provider.where(id: provider.id).update_all(credentials: expected)
+    assert_equal expected, provider.reload.credentials
+  end
+
   test "unsupported and malformed selections cannot save or alter persisted credentials" do
     provider = create_test_account("provider", "Invalid Credential Provider").provider
     provider.update!(credentials: %w[MD])

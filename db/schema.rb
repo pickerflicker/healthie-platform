@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_21_031000) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_21_032000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -46,7 +46,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_21_031000) do
     t.datetime "updated_at", null: false
     t.string "credentials", default: [], null: false, array: true
     t.index ["user_id"], name: "index_providers_on_user_id", unique: true
-    t.check_constraint "credentials <@ ARRAY['MD'::character varying, 'RD'::character varying, 'RDN'::character varying, 'LD'::character varying, 'CNS'::character varying, 'CDCES'::character varying] AND array_position(credentials, NULL::character varying) IS NULL", name: "providers_credentials_valid"
+    t.check_constraint "credentials <@ ARRAY['MD'::character varying, 'DO'::character varying, 'OD'::character varying, 'DDS'::character varying, 'DMD'::character varying, 'DPM'::character varying, 'DC'::character varying, 'RN'::character varying, 'LPN'::character varying, 'LVN'::character varying, 'APRN'::character varying, 'NP'::character varying, 'DNP'::character varying, 'BSN'::character varying, 'MSN'::character varying, 'CNM'::character varying, 'CRNA'::character varying, 'PA-C'::character varying, 'RD'::character varying, 'RDN'::character varying, 'LD'::character varying, 'LDN'::character varying, 'CNS'::character varying, 'CDCES'::character varying, 'PhD'::character varying, 'PsyD'::character varying, 'LCSW'::character varying, 'LMFT'::character varying, 'LPC'::character varying, 'LMHC'::character varying, 'LPCC'::character varying, 'MSW'::character varying, 'LSW'::character varying, 'LICSW'::character varying, 'NCC'::character varying, 'BCBA'::character varying, 'PT'::character varying, 'DPT'::character varying, 'OTD'::character varying, 'OTR'::character varying, 'PTA'::character varying, 'COTA'::character varying, 'PharmD'::character varying, 'RPh'::character varying, 'AuD'::character varying, 'CCC-A'::character varying, 'CCC-SLP'::character varying, 'ND'::character varying, 'LAc'::character varying, 'NBC-HWC'::character varying] AND array_position(credentials, NULL::character varying) IS NULL", name: "providers_credentials_valid"
   end
 
   create_table "users", force: :cascade do |t|

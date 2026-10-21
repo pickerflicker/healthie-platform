@@ -7,12 +7,19 @@
   <%= tag.fieldset aria: { describedby: ("credential-errors" if @provider.errors.any?) } do %>
     <legend>Credentials</legend>
     <%= hidden_field_tag "provider[credentials][]", "", id: nil %>
-    <% Provider::CREDENTIALS.each do |value, description| %>
-      <p>
-        <%= check_box_tag "provider[credentials][]", value, @provider.credentials.include?(value), id: "credential_#{value}" %>
-        <%= label_tag "credential_#{value}", "#{value} — #{description}" %>
-      </p>
-    <% end %>
+    <div class="credential-groups">
+      <% Provider::CREDENTIAL_GROUPS.each do |heading, choices| %>
+        <fieldset class="credential-category">
+          <legend><%= heading %></legend>
+          <% choices.each do |value, description| %>
+            <p class="credential-choice">
+              <%= check_box_tag "provider[credentials][]", value, @provider.credentials.include?(value), id: "credential_#{value}" %>
+              <%= label_tag "credential_#{value}", "#{value} — #{description}" %>
+            </p>
+          <% end %>
+        </fieldset>
+      <% end %>
+    </div>
   <% end %>
   <%= form.submit "Save credentials" %>
 <% end %>

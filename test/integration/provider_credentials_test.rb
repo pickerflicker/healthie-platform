@@ -19,18 +19,18 @@ class ProviderCredentialsRequestsTest < ActionDispatch::IntegrationTest
     get edit_provider_path
     assert_response :success
     assert_select "fieldset legend", text: "Credentials"
-    assert_select "input[type=checkbox]", count: 6
+    assert_select "input[type=checkbox]", count: 50
     patch provider_home_path, params: { provider: { credentials: [ "", "LD", "RDN", "RDN" ] } }
     assert_redirected_to provider_home_path
     follow_redirect!
     assert_select "[role=status]", text: "Credentials saved."
-    assert_includes response.body, "Welcome, Profile Owner, RDN, LD."
+    assert_includes response.body, "Welcome Profile Owner, RDN, LD."
     assert_equal %w[RDN LD], @provider.reload.credentials
     get edit_provider_path
     assert_select "input[type=checkbox][checked]", count: 2
     patch provider_home_path, params: { provider: { credentials: [ "" ] } }
     follow_redirect!
-    assert_includes response.body, "Welcome, Profile Owner."
+    assert_includes response.body, "Welcome Profile Owner."
     assert_equal [], @provider.reload.credentials
 
     [ [ "FAKE" ], "MD", { "MD" => "1" }, [ "MD", { "bad" => "value" } ] ].each do |invalid|
