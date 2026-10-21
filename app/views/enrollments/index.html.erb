@@ -26,9 +26,15 @@
     <% if @available_providers.empty? %>
       <p class="soft-note mt-5">All available providers are already added.</p>
     <% else %>
+      <% provider_options = @available_providers.map { |provider| [provider_name(provider.name, provider.credentials), provider.id] } %>
+      <% selected_provider = provider_options.find { |label, id| id.to_s == @enrollment.provider_id.to_s } || provider_options.first %>
       <%= form_with model: @enrollment, url: enrollments_path, data: { controller: "pending", action: "turbo:submit-start->pending#start turbo:submit-end->pending#finish" } do |form| %>
         <div class="form-grid">
-          <div><%= form.label :provider_id, "Provider", class: "field-label" %><%= form.select :provider_id, @available_providers.map { |provider| [provider_name(provider.name, provider.credentials), provider.id] }, {}, class: "select w-full", aria: { describedby: ("enrollment-errors" if @enrollment.errors.any?) } %></div>
+          <div data-controller="provider-selection">
+            <%= form.label :provider_id, "Provider", class: "field-label" %>
+            <%= form.select :provider_id, provider_options, {}, class: "select w-full", data: { provider_selection_target: "select", action: "change->provider-selection#update" }, aria: { describedby: ["selected-provider", ("enrollment-errors" if @enrollment.errors.any?)].compact.join(" ") } %>
+            <p id="selected-provider" class="field-hint" aria-live="polite">Selected provider: <span data-provider-selection-target="name"><%= selected_provider.first %></span></p>
+          </div>
           <div><%= form.label :plan, "Plan", class: "field-label" %><%= form.select :plan, [["Basic", "basic"], ["Premium", "premium"]], {}, class: "select w-full", aria: { describedby: ("enrollment-errors" if @enrollment.errors.any?) } %></div>
         </div>
         <div class="form-actions"><%= form.submit "Add provider", class: "btn btn-primary", data: { turbo_submits_with: "Adding…" } %></div>

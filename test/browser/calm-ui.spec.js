@@ -131,3 +131,37 @@ test('provider server validation recovers and the complete directory reaches its
   await page.reload();
   await expect(page.locator('tbody tr')).toHaveCount(2);
 });
+
+test('narrow provider selection shows full distinguishing names and credentials before sharing', async ({ page, scenario }, testInfo) => {
+  const prefix = 'Alexandria Verylongsharedfamilyname '.repeat(3);
+  const firstName = `${prefix}Morgan`;
+  const secondName = `${prefix}Taylor`;
+  const firstLabel = `${firstName}, RDN, LD`;
+  const secondLabel = `${secondName}, MD, PhD`;
+  scenario({ accounts: {
+    writer: { role: 'client', name: 'Riley Lane' },
+    first: { role: 'provider', name: firstName },
+    second: { role: 'provider', name: secondName }
+  }, provider_credentials: { first: ['RDN', 'LD'], second: ['MD', 'PhD'] } });
+  await signIn(page, 'writer');
+  await expect(page).toHaveURL(/\/client$/);
+  await page.goto('/enrollments');
+  const select = page.getByLabel('Provider', { exact: true });
+  const identity = page.locator('#selected-provider');
+  for (const width of [320, 390]) {
+    await page.setViewportSize({ width, height: 900 });
+    await select.selectOption({ label: firstLabel });
+    await expect(identity).toHaveText(`Selected provider: ${firstLabel}`);
+    await expect(identity).toBeVisible();
+    await select.selectOption({ label: secondLabel });
+    await expect(identity).toHaveText(`Selected provider: ${secondLabel}`);
+    expect(await identity.evaluate(el => el.scrollWidth <= el.clientWidth)).toBe(true);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+    await page.screenshot({ path: testInfo.outputPath(`selected-identity-${width}.png`), fullPage: true });
+  }
+  await page.getByRole('button', { name: 'Add provider', exact: true }).click();
+  await expect(page.getByRole('status')).toHaveText('Provider added.');
+  await page.reload();
+  await expect(page.locator('tbody td').first()).toHaveText(secondLabel);
+  await expect(identity).toHaveText(`Selected provider: ${firstLabel}`);
+});
