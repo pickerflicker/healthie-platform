@@ -201,8 +201,10 @@
   .provider-list td { background:white; border-block:1px solid #e1e7df; padding:20px 12px; vertical-align:middle; }
   .provider-list td:first-child { border-left:1px solid #e1e7df; border-radius:13px 0 0 13px; padding-left:21px; }
   .provider-list td:last-child { border-right:1px solid #e1e7df; border-radius:0 13px 13px 0; text-align:right; }
-  .provider-list .plan-column { width:100px; }
+  .provider-list .plan-column { width:112px; }
   .provider-list .action-column { width:125px; }
+  .provider-list .plan-cell { text-align:center; }
+  .provider-list .plan-cell .badge { width:88px; white-space:nowrap; }
   .provider-list .person-name { min-width:0; }
   .credential-groups { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:18px; margin-top:24px; }
   .credential-category { min-width:0; border:1px solid #e1e7df; border-radius:12px; padding:18px; }

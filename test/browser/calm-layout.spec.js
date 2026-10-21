@@ -33,3 +33,48 @@ test('real role pages reflow with populated lists and long text at desktop, 390p
     for (const [path, name] of [['/provider','provider-home'], ['/provider/edit','credentials'], ['/enrollments','clients'], ['/journal_entries','feed'], [clientJournal,'client-journal'], [entry,'read-only'], ['/client','role-denied'], ['/journal_entries/999999999','not-found']]) await check(path, name, width);
   }
 });
+
+test('relationship plan badges stay aligned and contain their labels at desktop resolutions', async ({ page, scenario }, testInfo) => {
+  scenario({
+    accounts: {
+      client: { role: 'client', name: 'Riley Montgomery' },
+      other: { role: 'client', name: 'Avery Long-Family-Name Montgomery' },
+      provider: { role: 'provider', name: 'Morgan Long-Family-Name Rivera' },
+      second: { role: 'provider', name: 'Taylor Reed' }
+    },
+    provider_credentials: { provider: ['RDN', 'LD', 'PhD'] },
+    enrollments: [
+      { client: 'client', provider: 'provider', plan: 'premium' },
+      { client: 'client', provider: 'second', plan: 'basic' },
+      { client: 'other', provider: 'provider', plan: 'basic' }
+    ]
+  });
+  for (const login of ['client', 'provider']) {
+    await signIn(page, login);
+    await expect(page).toHaveURL(new RegExp(`/${login}$`));
+    for (const width of [1024, 1280, 1440, 1920]) {
+      await page.setViewportSize({ width, height: 1080 });
+      await page.goto('/enrollments');
+      await page.evaluate(() => document.fonts.ready);
+      const badges = page.locator('.plan-cell .badge');
+      await expect(badges).toHaveCount(2);
+      const bounds = await badges.evaluateAll(elements => elements.map(element => {
+        const box = element.getBoundingClientRect();
+        const range = document.createRange();
+        range.selectNodeContents(element);
+        const text = range.getBoundingClientRect();
+        return { x: box.x, width: box.width, height: box.height,
+          contained: text.left >= box.left && text.right <= box.right && text.top >= box.top && text.bottom <= box.bottom };
+      }));
+      for (const badge of bounds) {
+        expect(badge.contained, `${login} badge text at ${width}px`).toBe(true);
+        expect(badge.x).toBeCloseTo(bounds[0].x, 0);
+        expect(badge.width).toBeCloseTo(bounds[0].width, 0);
+        expect(badge.height).toBeCloseTo(bounds[0].height, 0);
+      }
+      expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+      await page.screenshot({ path: testInfo.outputPath(`${login}-relationships-${width}.png`), fullPage: true });
+    }
+    await signOut(page);
+  }
+});
