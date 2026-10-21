@@ -1,10 +1,4 @@
-const { test, expect } = require('../support/browser');
-async function signIn(page, login) {
-  await page.goto('/users/sign_in');
-  await page.getByLabel('Email').fill(`${login}@browser.example.test`);
-  await page.getByLabel('Password', { exact: true }).fill('Focused-tests-2026');
-  await page.getByRole('button', { name: 'Sign in', exact: true }).click();
-}
+const { test, expect, signIn, signOut } = require('../support/browser');
 
 test('enrollment age orders both visible lists; re-enrollment refreshes warm cache', async ({ page, scenario }, testInfo) => {
   scenario({
@@ -24,8 +18,7 @@ test('enrollment age orders both visible lists; re-enrollment refreshes warm cac
   await page.getByRole('link', { name: 'My clients', exact: true }).click();
   await expect(page.locator('tbody tr td:first-child')).toHaveText(['Rowan Hayes', 'Quinn Avery']);
   await page.screenshot({ path: testInfo.outputPath('provider-enrollment-order.png'), fullPage: true });
-  await page.getByRole('button', { name: 'Sign out', exact: true }).click();
-  await expect(page).toHaveURL(/\/users\/sign_in$/);
+  await signOut(page);
   await signIn(page, 'client');
   await page.getByRole('link', { name: 'My providers', exact: true }).click();
   await expect(page.locator('tbody tr td:first-child')).toHaveText(['Drew Ellis', 'Robin Lane']);

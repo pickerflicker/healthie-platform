@@ -36,11 +36,21 @@ For when browser acceptance applies and its browser mode, follow [agent-team.md]
 
 When a managed worker cannot launch Chromium directly, the operator runs `bin/qa-browser-host start` from a native terminal. QA then runs `env -u CI HEALTHIE_QA_BROWSER_WS_FILE=/Users/smh/dev/healthie-platform/tmp/symphony/browser-ws mise exec -- bin/acceptance`. The file is a local control secret: it is mode 0600 under ignored runtime state and its contents must never be printed or published. Playwright still creates an isolated test context; `bin/qa-browser-host stop` remains an operator lifecycle action.
 
+## Validation coverage
+
+The [README check table](../README.md#check-commands) defines the public commands and GitHub/local split. Run `bin/check-all --base origin/main` through mise after sourcing `script/native_bundle_env` to run delivery, Rails, browser and local agent suites sequentially. It exits nonzero on a failed suite or missing prerequisite and never silently substitutes a smaller run. `bin/check-delivery` is shared with GitHub CI; its optional `--base COMMIT` selects committed changes, otherwise the artifact guard checks staged files.
+
+`bin/check-agents` runs 38 deterministic local infrastructure tests: 4 retry-guard, 9 dispatch-gate, 24 launcher/permission-bridge and 1 retry-protocol test. It also validates the nested Ruby/Node toolchain. The protocol case supplies its own temporary workflow and fake agent process. These checks make no live tracker/model calls and start no scheduler. `bin/check-symphony` remains the narrower 37-test gate/launcher command; use `bin/check-agents` for complete agent coverage.
+
+Agent checks use an already-prepared development build at `tmp/symphony/runtime`. For a sibling worktree, set `SYMPHONY_RUNTIME_DIR=/Users/smh/dev/healthie-platform/tmp/symphony/runtime` to reuse the canonical prepared runtime. They execute the selected checkout's test files and never rebuild, patch or restart that runtime. Prepare a missing or outdated runtime separately with `bin/setup-symphony` while Symphony is stopped; setup now finishes by running the complete agent suite. When changing installed Symphony patches, refresh the prepared runtime before validating that candidate. A missing compiled runtime fails with an actionable message.
+
+For application-only changes, ordinary GitHub CI is sufficient. For agent-infrastructure changes, including these check scripts, record the additional local agent-suite outcome in the PR. Report actual command/suite results; reserve “all checks passed” for `bin/check-all`. The optional `bin/check-codex-launcher --codex` live-installed probes and generated `bin/ci` security audits remain separate from this deterministic suite.
+
 ## Native Symphony controls
 
 `bin/setup-symphony` copies the installed Symphony source into ignored project runtime storage, applies the checked-in dispatch gate, builds it, and runs focused gate tests. The original source checkout remains untouched. Supply SYMPHONY_SOURCE_DIR to use another compatible source; installation refuses an unknown tracker interface. Stop before rebuilding. LINEAR_API_KEY is inherited in memory, never written by the launcher.
 
-Run `bin/check-symphony` for the complete deterministic gate seam without rebuilding or interrupting the live scheduler. It covers Todo claim and safe idle, review/Blocked reconstruction, persistent pause, same-ticket feedback resume, duplicate ownership, Done release, tracker failure and prerequisite states (including canceled-but-undelivered blockers).
+Run `bin/check-agents` for complete local infrastructure coverage, or `bin/check-symphony` for the deterministic gate/launcher subset without rebuilding or interrupting the live scheduler. It covers Todo claim and safe idle, review/Blocked reconstruction, persistent pause, same-ticket feedback resume, duplicate ownership, Done release, tracker failure and prerequisite states (including canceled-but-undelivered blockers).
 
 The focused check also enters the project from a cold login shell, activates mise, and verifies that a nested Bash child resolves the pinned Ruby and Node. Symphony's create/before-run hooks and Codex launcher activate mise before invoking child scripts so a login shell cannot fall back to system Ruby or an unrelated Node installation.
 

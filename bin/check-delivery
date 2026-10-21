@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+set -euo pipefail
+cd "$(dirname "$0")/.."
+# Validate the artifact-guard arguments before running the delivery regression tests.
+bin/check-qa-artifacts "$@"
+python3 script/qa_artifact_guard_test.py
+python3 script/linear_completion_test.py

@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+set -euo pipefail
+cd "$(dirname "$0")/.."
+project_root="$PWD"
+runtime="${SYMPHONY_RUNTIME_DIR:-$project_root/tmp/symphony/runtime}"
+if [[ $# -gt 0 ]]; then
+  echo 'Usage: bin/check-agents' >&2
+  exit 2
+fi
+if [[ ! -f "$runtime/_build/dev/lib/symphony_elixir/ebin/Elixir.SymphonyElixir.Codex.AppServer.beam" ]]; then
+  echo 'Prepared Symphony runtime missing. Prepare it with bin/setup-symphony while Symphony is stopped, or set SYMPHONY_RUNTIME_DIR to an existing prepared runtime.' >&2
+  exit 1
+fi
+runtime="$(cd "$runtime" && pwd)"
+# These checks use separate processes and test-owned data; never start a scheduler.
+MIX_ENV=dev SYMPHONY_SOURCE_DIR="$runtime" bin/check-symphony
+(cd "$runtime" && MIX_ENV=dev mise exec -- mix run --no-start --no-compile --no-deps-check "$project_root/script/symphony/retry_protocol_test.exs")

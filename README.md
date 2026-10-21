@@ -49,4 +49,20 @@ Clients use **My providers** to add Basic (default) or Premium relationships and
 
 `User.create_account!(name:, email:, password:, role:)` creates an account and matching profile atomically. User owns identity and a required string role; Provider/Client delegate identity. Model validation enforces the matching profile, immutable role/account association and retained required profile. Database constraints enforce required/unique profile foreign keys and valid roles. Direct SQL/bulk writes bypass cross-table model validation and are outside the normal account creation path.
 
+## Check commands
+
+| Command | Coverage | GitHub CI |
+| --- | --- | --- |
+| `bin/check` | Rails tests, Ruby style and code loading | Yes |
+| `bin/acceptance` | Headless browser scenarios | Yes |
+| `bin/check-delivery --base origin/main` | Delivery regression tests and QA artifact guard | Yes, with the PR/push base |
+| `bin/check-agents` | 38 local agent-infrastructure tests plus nested toolchain validation | Local only |
+| `bin/check-all --base origin/main` | All four suites above, sequentially | Local only |
+
+For a complete local run, source `script/native_bundle_env`, then run `mise exec -- bin/check-all --base origin/main`. PostgreSQL/Redis and browser dependencies must be ready; agent checks also require the prepared Symphony runtime documented in [operations](docs/operations.md#validation-coverage). Missing prerequisites fail the command rather than skip a suite. Without `--base`, the delivery guard checks staged files instead of the committed branch diff.
+
+Application-only PRs require the ordinary GitHub CI suites. Changes to agent launch, permissions, dispatch, retry handling or their test/check tooling additionally require a passing local `bin/check-agents` result recorded in the PR. Report suites by name; use “all checks passed” only for a successful `bin/check-all` run. Live Codex probes and optional security audits are separate, explicitly requested checks. The generated `bin/ci` audit runner is neither the GitHub workflow nor the full local command.
+
+Browser tests share only small `signIn`/`signOut` helpers in `test/support/browser.js`. Each case declares its own records and expectations; authentication failure/tampering steps remain inline in the authentication test.
+
 [Linear project](https://linear.app/pickerflicker/project/healthie-platform-c6cbdb1032a3). See [operations](docs/operations.md) and [Developer/QA workflow](docs/agent-team.md).

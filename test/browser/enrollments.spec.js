@@ -1,12 +1,4 @@
-const { test, expect } = require('../support/browser');
-
-async function signIn(page, login) {
-  await page.goto('/users/sign_in');
-  await page.getByLabel('Email').fill(`${login}@browser.example.test`);
-  await page.getByLabel('Password', { exact: true }).fill('Focused-tests-2026');
-  await page.getByRole('button', { name: 'Sign in', exact: true }).click();
-  await expect(page).toHaveURL(login.includes('provider') ? /\/provider$/ : /\/client$/);
-}
+const { test, expect, signIn } = require('../support/browser');
 
 test('client Basic/Premium enrollment flow and provider read-only boundaries', async ({ page, browser, scenario }, testInfo) => {
   scenario({
@@ -25,6 +17,7 @@ test('client Basic/Premium enrollment flow and provider read-only boundaries', a
     ],
   });
   await signIn(page, 'empty-client');
+  await expect(page).toHaveURL(/\/client$/);
   await page.getByRole('link', { name: 'My providers' }).click();
   await expect(page.getByText('No current relationships.')).toBeVisible();
   await expect(page.getByLabel('Plan', { exact: true })).toHaveValue('basic');
@@ -58,6 +51,7 @@ test('client Basic/Premium enrollment flow and provider read-only boundaries', a
   const providerContext = await browser.newContext();
   const providerPage = await providerContext.newPage();
   await signIn(providerPage, 'provider');
+  await expect(providerPage).toHaveURL(/\/provider$/);
   await providerPage.getByRole('link', { name: 'My clients' }).click();
   await expect(providerPage.locator('tbody tr')).toHaveCount(3);
   await expect(providerPage.locator('tbody tr').filter({ hasText: 'Emery Hale' })).toContainText('Basic');
@@ -69,6 +63,7 @@ test('client Basic/Premium enrollment flow and provider read-only boundaries', a
   const otherContext = await browser.newContext();
   const otherPage = await otherContext.newPage();
   await signIn(otherPage, 'client');
+  await expect(otherPage).toHaveURL(/\/client$/);
   expect((await otherPage.request.delete(enrollmentURL)).status()).toBe(404);
   await otherPage.getByRole('link', { name: 'My providers' }).click();
   await expect(otherPage.locator('tbody tr')).toHaveCount(2);

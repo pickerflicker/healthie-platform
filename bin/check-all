@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+set -euo pipefail
+cd "$(dirname "$0")/.."
+# Pass optional --base COMMIT through to the same artifact check used by GitHub CI.
+bin/check-delivery "$@"
+bin/check
+bin/acceptance
+bin/check-agents
