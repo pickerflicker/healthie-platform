@@ -19,7 +19,7 @@ class ProviderListCacheTest < ActionDispatch::IntegrationTest
 
   teardown do
     @users.reverse_each(&:destroy!)
-    [ @client, @other ].each { |client| Rails.cache.delete(Client.provider_list_cache_key(client.id)) }
+    [ @client, @other ].each { |client| Rails.cache.delete(Client::ProviderList.cache_key(client.id)) }
   end
 
   test "Redis miss queries once and hit reuses serializable rows with client isolation" do
@@ -38,7 +38,7 @@ class ProviderListCacheTest < ActionDispatch::IntegrationTest
     assert_includes events, "cache_generate.active_support"
     assert_includes events, "cache_fetch_hit.active_support"
     redis = Redis.new(url: ENV.fetch("REDIS_URL", "redis://127.0.0.1:56379/0"))
-    redis_key = "healthie:test:#{Client.provider_list_cache_key(@client.id)}"
+    redis_key = "healthie:test:#{Client::ProviderList.cache_key(@client.id)}"
     assert redis.exists?(redis_key)
     assert_includes 1..60, redis.ttl(redis_key), "Provider-list entries must expire within one minute of writing"
     assert_empty @other.provider_list
@@ -49,21 +49,21 @@ class ProviderListCacheTest < ActionDispatch::IntegrationTest
   test "committed add remove and plan changes invalidate only the affected client" do
     original = @client.provider_list
     @other.provider_list
-    other_key = Client.provider_list_cache_key(@other.id)
+    other_key = Client::ProviderList.cache_key(@other.id)
     Enrollment.transaction do
       @enrollment.destroy!
       raise ActiveRecord::Rollback
     end
-    assert_equal original, Rails.cache.read(Client.provider_list_cache_key(@client.id))
+    assert_equal original, Rails.cache.read(Client::ProviderList.cache_key(@client.id))
     assert_equal original, @client.provider_list
     extra = @client.enrollments.create!(provider: @extra, plan: :premium)
-    assert_nil Rails.cache.read(Client.provider_list_cache_key(@client.id))
+    assert_nil Rails.cache.read(Client::ProviderList.cache_key(@client.id))
     assert_equal [], Rails.cache.read(other_key)
     assert_equal [ @extra.id, @provider.id ], @client.provider_list.pluck(:provider_id)
     @enrollment.update!(plan: :premium)
     assert_equal %w[premium premium], @client.provider_list.pluck(:plan)
     extra.destroy!
-    assert_nil Rails.cache.read(Client.provider_list_cache_key(@client.id))
+    assert_nil Rails.cache.read(Client::ProviderList.cache_key(@client.id))
     assert_equal [ @provider.id ], @client.provider_list.pluck(:provider_id)
     @enrollment.destroy!
     assert_empty @client.provider_list
@@ -83,7 +83,7 @@ class ProviderListCacheTest < ActionDispatch::IntegrationTest
       @provider.user.update!(password: "Another-password-2026")
     end
     [ @client, @other ].each do |client|
-      assert_nil Rails.cache.read(Client.provider_list_cache_key(client.id))
+      assert_nil Rails.cache.read(Client::ProviderList.cache_key(client.id))
       assert_equal [ "Renamed provider" ], client.provider_list.pluck(:name)
     end
   end
@@ -95,7 +95,7 @@ class ProviderListCacheTest < ActionDispatch::IntegrationTest
       @enrollment.update!(client: @other)
       @enrollment.update!(plan: :premium)
     end
-    [ @client, @other ].each { |client| assert_nil Rails.cache.read(Client.provider_list_cache_key(client.id)) }
+    [ @client, @other ].each { |client| assert_nil Rails.cache.read(Client::ProviderList.cache_key(client.id)) }
     assert_empty @client.provider_list
     assert_equal [ "premium" ], @other.provider_list.pluck(:plan)
   end
@@ -108,7 +108,7 @@ class ProviderListCacheTest < ActionDispatch::IntegrationTest
     @enrollment.destroy!
     assert_empty @client.provider_list
     # Even deliberately stale display data must never become permission evidence.
-    Rails.cache.write(Client.provider_list_cache_key(@client.id), stale)
+    Rails.cache.write(Client::ProviderList.cache_key(@client.id), stale)
     assert_not JournalEntryPolicy.new(actor, entry).show?
     assert_not ClientPolicy.new(actor, @client).show?
     assert_empty JournalEntryPolicy::Scope.new(actor, JournalEntry.all).resolve
@@ -135,7 +135,7 @@ class ProviderListCacheTest < ActionDispatch::IntegrationTest
     expected = [ { enrollment_id: @enrollment.id, provider_id: @provider.id, name: "cache-provider", plan: "basic" } ]
     assert_equal expected, @client.provider_list
     Rails.cache.clear
-    assert_nil Rails.cache.read(Client.provider_list_cache_key(@client.id))
+    assert_nil Rails.cache.read(Client::ProviderList.cache_key(@client.id))
     assert_equal expected, @client.provider_list
     assert_equal "preserve", redis.get(sentinel)
     assert_equal "healthie_test", ActiveRecord::Base.connection.current_database

@@ -13,8 +13,6 @@ class Enrollment < ApplicationRecord
   def invalidate_provider_lists
     # Capture every affected owner, including earlier saves in this transaction.
     client_ids = [ client_id, *saved_change_to_client_id ].compact.uniq
-    ActiveRecord.after_all_transactions_commit do
-      client_ids.each { |id| Rails.cache.delete(Client.provider_list_cache_key(id)) }
-    end
+    Client::ProviderList.invalidate_after_commit { client_ids }
   end
 end

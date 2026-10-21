@@ -23,10 +23,8 @@ class User < ApplicationRecord
   def invalidate_provider_lists
     return unless provider?
 
-    ActiveRecord.after_all_transactions_commit do
-      provider.enrollments.distinct.pluck(:client_id).each do |id|
-        Rails.cache.delete(Client.provider_list_cache_key(id))
-      end
+    Client::ProviderList.invalidate_after_commit do
+      provider.enrollments.distinct.pluck(:client_id)
     end
   end
 

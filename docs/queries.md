@@ -79,6 +79,10 @@ The tests also exercise tied timestamps across different clients.
 
 ## Provider-list cache
 
+`Client::ProviderList` owns the cache key, one-minute TTL, scalar query and
+after-commit invalidation. Enrollment and User callbacks identify affected
+clients; `client.provider_list` remains the display read entry point.
+
 `client.provider_list` returns serializable hashes with enrollment/provider IDs,
 provider name and plan, ordered by enrollment creation time then ID, both descending. The client **My providers** page
 uses it after Pundit scopes the client; `client.providers` remains a raw
