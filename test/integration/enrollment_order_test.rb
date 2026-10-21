@@ -1,6 +1,10 @@
 require "test_helper"
+require_relative "../support/request_authentication"
 
 class EnrollmentOrderTest < ActionDispatch::IntegrationTest
+  include DomainAccounts
+  include RequestAuthentication
+
   self.use_transactional_tests = false
 
   setup do
@@ -33,12 +37,12 @@ class EnrollmentOrderTest < ActionDispatch::IntegrationTest
 
     [ [ @provider.user, @clients.values_at(1, 0, 2).map(&:name) ],
       [ @client.user, @providers.values_at(1, 0, 2).map(&:name) ] ].each do |user, names|
-      post user_session_path, params: { user: { email: user.email, password: "Ordering-tests-2026" } }
+      log_in_as(user)
       get enrollments_path
       assert_response :success
       assert_select "tbody tr td:first-child", text: /./, count: 3
       assert_equal names, css_select("tbody tr td:first-child").map { |cell| cell.text.strip }
-      delete destroy_user_session_path
+      log_out
     end
 
     @forward[2].destroy!
@@ -101,8 +105,7 @@ class EnrollmentOrderTest < ActionDispatch::IntegrationTest
 
   def account(role)
     number = @users.size
-    User.create_account!(name: "Ordering #{number}", email: "ordering-#{SecureRandom.hex(6)}@example.test",
-      password: "Ordering-tests-2026", role: role).tap do |user|
+    create_test_account(role, "Ordering #{number}", email: "ordering-#{SecureRandom.hex(6)}@example.test").tap do |user|
       # Older profiles can acquire newer relationships; edits must not move them.
       user.public_send(role).update_columns(created_at: Time.utc(2020, 1, 1) + number.days)
       @users << user

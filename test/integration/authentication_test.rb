@@ -1,15 +1,12 @@
 require "test_helper"
+require_relative "../support/request_authentication"
 require_relative "../support/domain_accounts"
 
 class AuthenticationTest < ActionDispatch::IntegrationTest
   include DomainAccounts
+  include RequestAuthentication
 
-  setup do
-    User.destroy_all
-    @client = create_test_account("client", "Test Client")
-    @provider = create_test_account("provider", "Test Provider")
-    @client.client.enrollments.create!(provider: @provider.provider)
-  end
+  setup { User.destroy_all }
 
   test "unauthenticated role pages require login" do
     [ root_path, provider_home_path, client_home_path ].each do |path|
@@ -19,13 +16,16 @@ class AuthenticationTest < ActionDispatch::IntegrationTest
   end
 
   test "invalid login shows meaningful failure" do
-    post user_session_path, params: { user: { email: @client.email, password: "wrong" } }
+    client = create_test_account("client", "Test Client")
+    post user_session_path, params: { user: { email: client.email, password: "wrong" } }
     assert_response :unprocessable_entity
     assert_select '[role="alert"]', text: /\AInvalid email or password\.\z/i
   end
 
   test "both roles sign in navigate reject opposite access and sign out" do
-    [ @provider, @client ].each do |account|
+    client = create_test_account("client", "Test Client")
+    provider = create_test_account("provider", "Test Provider")
+    [ provider, client ].each do |account|
       role = account.role
       post user_session_path, params: { user: { email: account.email, password: DomainAccounts::PASSWORD, role: role == "client" ? "provider" : "client" } }
       assert_redirected_to root_path
@@ -51,9 +51,10 @@ class AuthenticationTest < ActionDispatch::IntegrationTest
   end
 
   test "profile scopes include own profile and current provider clients only" do
-    provider = @provider
-    client = @client
-    other = User.create_account!(name: "Other", email: "other@example.com", password: "test-password-123", role: "client")
+    client = create_test_account("client", "Test Client")
+    provider = create_test_account("provider", "Test Provider")
+    client.client.enrollments.create!(provider: provider.provider)
+    other = create_test_account("client", "Other", email: "other@example.com")
     assert_equal [ client.client ], ClientPolicy::Scope.new(client, Client.all).resolve.to_a
     assert_equal [ client.client.id ], ClientPolicy::Scope.new(provider, Client.all).resolve.order(:id).pluck(:id)
     assert_equal [ provider.provider ], ProviderPolicy::Scope.new(provider, Provider.all).resolve.to_a
@@ -62,9 +63,10 @@ class AuthenticationTest < ActionDispatch::IntegrationTest
   end
 
   test "client policy independently enforces record ownership and role" do
-    client = @client
-    provider = @provider
-    other = User.create_account!(name: "Other", email: "other@example.com", password: "test-password-123", role: "client")
+    client = create_test_account("client", "Test Client")
+    provider = create_test_account("provider", "Test Provider")
+    client.client.enrollments.create!(provider: provider.provider)
+    other = create_test_account("client", "Other", email: "other@example.com")
 
     assert ClientPolicy.new(client, client.client).show?
     assert_not ClientPolicy.new(client, other.client).show?
@@ -75,21 +77,22 @@ class AuthenticationTest < ActionDispatch::IntegrationTest
   end
 
   test "client home authorizes own loaded profile despite forged record parameters" do
-    other = User.create_account!(name: "Other", email: "other@example.com", password: "test-password-123", role: "client")
-    post user_session_path, params: { user: { email: @client.email, password: DomainAccounts::PASSWORD } }
+    client = create_test_account("client", "Test Client")
+    other = create_test_account("client", "Other", email: "other@example.com")
+    log_in_as(client)
 
     get client_home_path, params: { id: other.client.id, client_id: other.client.id, user_id: other.id, role: "provider" }
     assert_response :success
     assert_select "h1", "Client home"
-    assert_select "main", text: /#{Regexp.escape(@client.name)}/
-    assert_select "main", text: /#{Regexp.escape(@client.email)}/
+    assert_select "main", text: /#{Regexp.escape(client.name)}/
+    assert_select "main", text: /#{Regexp.escape(client.email)}/
     assert_select "main", text: /other@example.com/, count: 0
   end
 
   test "provider policy independently enforces record ownership and role" do
-    provider = @provider
-    client = @client
-    other = User.create_account!(name: "Other Provider", email: "other-provider@example.com", password: "test-password-123", role: "provider")
+    client = create_test_account("client", "Test Client")
+    provider = create_test_account("provider", "Test Provider")
+    other = create_test_account("provider", "Other Provider", email: "other-provider@example.com")
 
     assert ProviderPolicy.new(provider, provider.provider).show?
     assert_not ProviderPolicy.new(provider, other.provider).show?
@@ -99,14 +102,15 @@ class AuthenticationTest < ActionDispatch::IntegrationTest
   end
 
   test "provider home authorizes own loaded profile despite forged record parameters" do
-    other = User.create_account!(name: "Other Provider", email: "other-provider@example.com", password: "test-password-123", role: "provider")
-    post user_session_path, params: { user: { email: @provider.email, password: DomainAccounts::PASSWORD } }
+    provider = create_test_account("provider", "Test Provider")
+    other = create_test_account("provider", "Other Provider", email: "other-provider@example.com")
+    log_in_as(provider)
 
     get provider_home_path, params: { id: other.provider.id, provider_id: other.provider.id, user_id: other.id, role: "client" }
     assert_response :success
     assert_select "h1", "Provider home"
-    assert_select "main", text: /#{Regexp.escape(@provider.name)}/
-    assert_select "main", text: /#{Regexp.escape(@provider.email)}/
+    assert_select "main", text: /#{Regexp.escape(provider.name)}/
+    assert_select "main", text: /#{Regexp.escape(provider.email)}/
     assert_select "main", text: /other-provider@example.com/, count: 0
   end
 end
