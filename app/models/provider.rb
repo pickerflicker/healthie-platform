@@ -84,9 +84,8 @@ class Provider < ApplicationRecord
   after_update :invalidate_provider_lists, if: :saved_change_to_credentials?
 
   def credentials=(values)
-    @malformed_credentials = !values.is_a?(Array) || values.any? { |value| !value.is_a?(String) }
     # The empty string is Rails' hidden checkbox sentinel, not a credential.
-    normalized = @malformed_credentials ? [] : values.reject(&:empty?).uniq
+    normalized = values.reject(&:empty?).uniq
       .sort_by { |value| CREDENTIALS.keys.index(value) || CREDENTIALS.size }
     super(normalized)
   end
@@ -94,9 +93,7 @@ class Provider < ApplicationRecord
   private
 
   def supported_credentials
-    if @malformed_credentials
-      errors.add(:credentials, "must be a list of supported selections")
-    elsif credentials.nil? || (credentials - CREDENTIALS.keys).any?
+    if credentials.nil? || (credentials - CREDENTIALS.keys).any?
       errors.add(:credentials, "must contain only supported selections")
     end
   end

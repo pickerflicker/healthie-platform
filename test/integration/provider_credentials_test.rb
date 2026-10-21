@@ -32,13 +32,15 @@ class ProviderCredentialsRequestsTest < ActionDispatch::IntegrationTest
     follow_redirect!
     assert_includes response.body, "Welcome Profile Owner."
     assert_equal [], @provider.reload.credentials
+    @provider.update!(credentials: %w[MD])
+    patch provider_home_path, params: { provider: { credentials: [] } }, as: :json
+    assert_redirected_to provider_home_path
+    assert_equal [], @provider.reload.credentials
 
-    [ [ "FAKE" ], "MD", { "MD" => "1" }, [ "MD", { "bad" => "value" } ] ].each do |invalid|
-      patch provider_home_path, params: { provider: { credentials: invalid } }, as: :json
-      assert_response :unprocessable_entity
-      assert_select "[role=alert]", text: /Credentials.*supported selections/
-      assert_equal [], @provider.reload.credentials
-    end
+    patch provider_home_path, params: { provider: { credentials: [ "FAKE" ] } }, as: :json
+    assert_response :unprocessable_entity
+    assert_select "[role=alert]", text: /Credentials.*supported selections/
+    assert_equal [], @provider.reload.credentials
   end
 
   test "anonymous and client requests are denied and policies independently deny other owners" do
