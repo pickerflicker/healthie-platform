@@ -15,7 +15,7 @@ class EnrollmentsTest < ActionDispatch::IntegrationTest
   end
 
   test "client list and directory are scoped and Basic default or Premium add and remove work" do
-    @other = create_test_account("client", "Other Client")
+    other = create_test_account("client", "Other Client")
     second = create_test_account("provider", "Second Provider")
     @client.client.enrollments.create!(provider: second.provider, plan: :premium)
     entry = @client.client.journal_entries.create!(text: "Retain this entry after removal")
@@ -28,7 +28,7 @@ class EnrollmentsTest < ActionDispatch::IntegrationTest
     assert_match "existing and future journal entries", response.body
     journals = [ [ entry.id, entry.text ] ]
     [ nil, "premium" ].each do |plan|
-      input = { provider_id: @available.id, client_id: @other.client.id, user_id: @other.id }
+      input = { provider_id: @available.id, client_id: other.client.id, user_id: other.id }
       input[:plan] = plan if plan
       assert_difference "Enrollment.count", 1 do
         post enrollments_path, params: { enrollment: input }
@@ -43,7 +43,7 @@ class EnrollmentsTest < ActionDispatch::IntegrationTest
       assert_response :see_other
     end
     assert_equal journals, @client.client.journal_entries.order(:id).pluck(:id, :text)
-    assert_not @other.client.enrollments.exists?(provider: @available)
+    assert_not other.client.enrollments.exists?(provider: @available)
   end
 
   test "duplicate invalid plan and unknown provider submissions do not write" do
@@ -61,12 +61,12 @@ class EnrollmentsTest < ActionDispatch::IntegrationTest
   end
 
   test "other clients relationships are concealed and provider mutation requests are forbidden" do
-    @other = create_test_account("client", "Other Client")
+    other = create_test_account("client", "Other Client")
     unrelated = create_test_account("client", "Unrelated Client")
     second = create_test_account("provider", "Second Provider")
     @client.client.enrollments.create!(provider: second.provider, plan: :premium)
-    @other.client.enrollments.create!(provider: @provider.provider)
-    log_in_as(@other)
+    other.client.enrollments.create!(provider: @provider.provider)
+    log_in_as(other)
     get enrollments_path
     assert_select "tbody tr", count: 1
     assert_no_difference "Enrollment.count" do
@@ -79,7 +79,7 @@ class EnrollmentsTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_select "tbody tr", count: 2
     assert_match @client.name, response.body
-    assert_match @other.name, response.body
+    assert_match other.name, response.body
     assert_no_match unrelated.name, response.body
     assert_select "form[action^='/enrollments']", count: 0
     assert_no_difference "Enrollment.count" do
@@ -93,7 +93,7 @@ class EnrollmentsTest < ActionDispatch::IntegrationTest
   end
 
   test "anonymous endpoints require sign in and policies independently check ownership" do
-    @other = create_test_account("client", "Other Client")
+    other = create_test_account("client", "Other Client")
     get enrollments_path
     assert_redirected_to new_user_session_path
     assert_no_difference "Enrollment.count" do
@@ -104,7 +104,7 @@ class EnrollmentsTest < ActionDispatch::IntegrationTest
     end
     %i[create? destroy?].each do |action|
       assert EnrollmentPolicy.new(@client, @enrollment).public_send(action)
-      [ @other, @provider, nil ].each do |actor|
+      [ other, @provider, nil ].each do |actor|
         assert_not EnrollmentPolicy.new(actor, @enrollment).public_send(action)
       end
     end
