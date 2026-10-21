@@ -21,4 +21,16 @@ const test = base.extend({
   }
 });
 
-module.exports = { test, expect };
+async function signIn(page, login) {
+  await page.goto('/users/sign_in');
+  await page.getByLabel('Email').fill(`${login}@browser.example.test`);
+  await page.getByLabel('Password', { exact: true }).fill('Focused-tests-2026');
+  await page.getByRole('button', { name: 'Sign in', exact: true }).click();
+}
+
+async function signOut(page) {
+  await page.getByRole('button', { name: 'Sign out', exact: true }).click();
+  await expect(page).toHaveURL(/\/users\/sign_in$/);
+}
+
+module.exports = { test, expect, signIn, signOut };

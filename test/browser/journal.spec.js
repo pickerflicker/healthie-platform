@@ -1,4 +1,4 @@
-const { test, expect } = require('../support/browser');
+const { test, expect, signIn } = require('../support/browser');
 
 test('client journal persisted CRUD journey', async ({ page, scenario }, testInfo) => {
   scenario({
@@ -11,10 +11,7 @@ test('client journal persisted CRUD journey', async ({ page, scenario }, testInf
       {"client": "client", "text": "Third tied journal", "created_at": "2026-10-19T08:00:00Z"},
     ],
   });
-  await page.goto('/users/sign_in');
-  await page.getByLabel('Email').fill('client@browser.example.test');
-  await page.getByLabel('Password', { exact: true }).fill('Focused-tests-2026');
-  await page.getByRole('button', { name: 'Sign in', exact: true }).click();
+  await signIn(page, 'client');
   await page.getByRole('link', { name: 'My journal', exact: true }).click();
   await expect(page.locator('article')).toHaveCount(3);
   await expect(page.locator('article').nth(0)).toContainText('Third tied journal');
