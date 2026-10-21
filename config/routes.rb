@@ -8,5 +8,7 @@ Rails.application.routes.draw do
   resources :enrollments, only: %i[index create destroy]
   root "home#index"
   get "provider", to: "providers#show", as: :provider_home
+  get "provider/edit", to: "providers#edit", as: :edit_provider
+  patch "provider", to: "providers#update"
   get "client", to: "clients#show", as: :client_home
 end

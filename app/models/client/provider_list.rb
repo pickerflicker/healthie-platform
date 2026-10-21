@@ -1,6 +1,6 @@
 class Client::ProviderList
   def self.cache_key(client_id)
-    "clients/#{client_id}/provider-list/v1"
+    "clients/#{client_id}/provider-list/v2"
   end
 
   def self.invalidate_after_commit(&affected_client_ids)
@@ -23,8 +23,8 @@ class Client::ProviderList
 
   def query
     @client.enrollments.joins(provider: :user).order(created_at: :desc, id: :desc)
-      .pluck(:id, :provider_id, "users.name", :plan).map do |enrollment_id, provider_id, name, plan|
-        { enrollment_id: enrollment_id, provider_id: provider_id, name: name, plan: plan }
+      .pluck(:id, :provider_id, "users.name", :plan, "providers.credentials").map do |enrollment_id, provider_id, name, plan, credentials|
+        { enrollment_id: enrollment_id, provider_id: provider_id, name: name, plan: plan, credentials: credentials }
       end
   end
 end

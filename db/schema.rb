@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_20_192000) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_21_031000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -44,7 +44,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_20_192000) do
     t.bigint "user_id", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "credentials", default: [], null: false, array: true
     t.index ["user_id"], name: "index_providers_on_user_id", unique: true
+    t.check_constraint "credentials <@ ARRAY['MD'::character varying, 'RD'::character varying, 'RDN'::character varying, 'LD'::character varying, 'CNS'::character varying, 'CDCES'::character varying] AND array_position(credentials, NULL::character varying) IS NULL", name: "providers_credentials_valid"
   end
 
   create_table "users", force: :cascade do |t|

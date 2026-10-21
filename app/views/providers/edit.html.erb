@@ -1,0 +1,19 @@
+<h1>Edit credentials</h1>
+<p>Choose any credentials you want displayed alongside your name. Leave all unchecked to display your name alone.</p>
+<% if @provider.errors.any? %>
+  <div role="alert" id="credential-errors"><%= @provider.errors.full_messages.to_sentence %></div>
+<% end %>
+<%= form_with model: @provider, url: provider_home_path, method: :patch do |form| %>
+  <%= tag.fieldset aria: { describedby: ("credential-errors" if @provider.errors.any?) } do %>
+    <legend>Credentials</legend>
+    <%= hidden_field_tag "provider[credentials][]", "", id: nil %>
+    <% Provider::CREDENTIALS.each do |value, description| %>
+      <p>
+        <%= check_box_tag "provider[credentials][]", value, @provider.credentials.include?(value), id: "credential_#{value}" %>
+        <%= label_tag "credential_#{value}", "#{value} — #{description}" %>
+      </p>
+    <% end %>
+  <% end %>
+  <%= form.submit "Save credentials" %>
+<% end %>
+<p><%= link_to "Back to provider home", provider_home_path %></p>

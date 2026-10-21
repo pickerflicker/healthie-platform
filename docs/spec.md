@@ -134,7 +134,7 @@ Use Docker Desktop and one shared Compose stack for Rails, PostgreSQL and Redis.
 - Pre-implementing the unknown feature, validation or query that the interviewer will introduce during pairing.
 - Public deployment, additional hosting infrastructure or production operations for this pre-work.
 - An admin role, admin impersonation, multi-role accounts, self-registration, password-recovery/confirmation email flows, social login or a general permission-management UI.
-- Provider-driven client enrollment, provider/client account CRUD, invitations, separate plan editing, billing, payments or subscription history.
+- Provider-driven client enrollment, general provider/client account CRUD (except the PIC-285 own-credentials editor below), invitations, separate plan editing, billing, payments or subscription history.
 - Provider-owned journal entries, provider-specific journal sharing, rich text, attachments, backdating or an independently editable journal date.
 - Journal-feed caching, caching every required query, distributed cache-coherence infrastructure or using cache contents to grant access.
 - Parallel ticket implementation, stacked PRs, automatic merges, extra agent roles or per-ticket application infrastructure stacks.
@@ -159,4 +159,12 @@ lists preload `client: :user`; the client provider-list query uses joins and
 pluck to project serializable display rows into Redis. Cache
 hits preserve that array order; committed membership changes invalidate it.
 Authorization continues to query current enrollments independently of display data.
-Retain the v1 cache key and its one-minute expiry; existing payloads expire naturally.
+PIC-285 uses the v2 cache key with credential arrays and the same one-minute expiry. Old v1 payloads are not read and expire naturally.
+
+## Optional provider credentials (PIC-285)
+
+Providers may edit only their own optional professional credentials from their workspace using labeled checkboxes grouped under Credentials. The supported ordered set is MD (Doctor of Medicine), RD (Registered Dietitian), RDN (Registered Dietitian Nutritionist), LD (Licensed Dietitian), CNS (Certified Nutrition Specialist), CDCES (Certified Diabetes Care and Education Specialist). Multiple selections and clearing all are supported; RD/RDN are alternatives with no mutual-exclusion or verification rule.
+
+Store credentials on Provider as a non-null PostgreSQL string array defaulting to empty, with model validation and an allowed-set database constraint. Normalize the empty checkbox sentinel, duplicates and supported-list order; reject unsupported or malformed input with feedback. Devise and action-specific Pundit enforce own-profile editing, with ownership derived server-side and only credentials writable. This narrowly extends the account CRUD exclusion; identity, roles, enrollment plans and journal access are unchanged.
+
+Append selected abbreviations to names on provider home, My providers and Add a provider; empty credentials display the name alone. Keep User.name unchanged. Extend the scalar joins/pluck Redis payload with credentials, preserve explicit enrollment ordering and invalidate all enrolled clients only after a committed change. Failed/rolled-back writes and unrelated clients retain their lists. Version the payload to avoid legacy labels. Add a few deterministic manual seed examples; automated tests own their scenarios. ADR 0004 records the array tradeoff; no credentialing subsystem, new infrastructure or larger demo dataset is included.

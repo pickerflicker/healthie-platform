@@ -97,6 +97,8 @@ The role predicate and profile accessor are different: user.client? returns a bo
 
 ## Final design audit
 
+PIC-285 narrowly extends the original exclusion of general account/profile CRUD: providers may edit only their own optional professional credentials using a controlled multi-select checkbox group. Supported values, in display order, are MD, RD, RDN, LD, CNS and CDCES; none is required, and RD/RDN have no mutual-exclusion rule. Names remain on User. Credentials appear on provider home, client provider lists and the provider selector and confer no access. Store the small fixed set as a constrained PostgreSQL array; see ADR 0004. This does not authorize a general profile editor, verification or license tracking.
+
 No consequential product or infrastructure choices remain unresolved. Accepted architectural decisions are preserved in docs/adr/0001-explicit-user-role-and-domain-profiles.md and docs/adr/0002-client-wide-journal-visibility.md. The to-spec step synthesized the confirmed decisions into docs/spec.md and published PIC-273. Next step: propose and approve a dependency-aware implementation-ticket breakdown, publish the child tickets in Backlog, then execute the selected local base-setup work only after its activation prerequisites are satisfied. Routine choices such as seed counts, basic page layout, serializable cache payload and supported screenshot upload path are implementation details. This audit does not indicate that local infrastructure or application features have been implemented.
 
 ## Published spec

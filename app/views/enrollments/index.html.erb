@@ -33,7 +33,7 @@
     <p>All available providers are already added.</p>
   <% else %>
     <%= form_with model: @enrollment, url: enrollments_path do |form| %>
-      <p><%= form.label :provider_id, "Provider" %> <%= form.collection_select :provider_id, @available_providers, :id, :name %></p>
+      <p><%= form.label :provider_id, "Provider" %> <%= form.select :provider_id, @available_providers.map { |provider| [provider_name(provider.name, provider.credentials), provider.id] } %></p>
       <p><%= form.label :plan, "Plan" %> <%= form.select :plan, [["Basic", "basic"], ["Premium", "premium"]] %></p>
       <%= form.submit "Add provider" %>
     <% end %>
