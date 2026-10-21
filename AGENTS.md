@@ -10,6 +10,10 @@ Steven wants ordering visible in each query: keep associations free of presentat
 
 For scalar display/cache payloads, Steven prefers a SQL projection: select needed columns with `pluck`, join related tables when needed, then map values into hashes. Use model objects with query-local preloading when callers need model behavior or association traversal. Preserve a working `joins + pluck` query during an ordering change; a generic eager-loading/N+1 requirement does not justify replacing it with `preload + map` over full records. Self-review and QA verify the chosen shape avoids per-row queries.
 
+## Test data
+
+Every automated test owns its setup or explicitly selected test fixtures, including browser journeys and cache/lifecycle checks. Never load `db/seeds.rb`, look up demo accounts, or assume demo counts/text/order in automated tests. Seeds are for manual development/staging/demo browsing. Prepare test databases with schema/migrations without seeding; keep destructive setup scoped to the local `healthie_test` database and `healthie:test` cache namespace.
+
 ## Required reading
 
 - Before planning or changing scope, read [CONTEXT.md](CONTEXT.md) for accepted product decisions and interview boundaries.

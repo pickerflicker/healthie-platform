@@ -12,7 +12,7 @@ Runtime decision: Docker Desktop manages the local app containers; Symphony runs
 
 Polling decision: Symphony polls Linear every 10 seconds (interval_ms: 10000).
 
-Seed-data requirement: intentional, realistic baseline records populate all entities so the app is useful to browse out of the box. This dataset is the baseline for new-feature testing, not a throwaway rehearsal reset. New entities and important feature states receive sensible seed records as part of feature delivery. Exact reload and test-isolation mechanics remain to be settled.
+Seed-data requirement: intentional, realistic baseline records populate all entities so the app is useful to browse out of the box. This dataset is the baseline for manual browsing and new-feature exploration, not automated test setup. All automated tests own their scenarios or explicitly selected test fixtures. New entities and important feature states receive sensible seed records as part of feature delivery. Exact reload and test-isolation mechanics remain to be settled.
 
 Redis requirement: provision local Redis now; the application will cache database query responses. Cache invalidation and seed/reload interaction must be designed with the chosen product behavior.
 

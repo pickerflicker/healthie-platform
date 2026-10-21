@@ -38,7 +38,9 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npx playwright install --with-deps chromium
-      - run: bin/rails db:prepare
+      - name: Reject demo seeds during automated checks
+        run: printf '%s\n' 'raise "Automated tests must create their own data; demo seeds are unavailable"' > db/seeds.rb
+      - run: bin/rails db:create db:schema:load
         env:
           RAILS_ENV: test
       - run: bin/check

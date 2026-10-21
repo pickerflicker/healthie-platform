@@ -123,8 +123,6 @@ journal and feed denial. Test cache clearing leaves development keys intact.
 
 ```sh
 mise exec -- bin/rails runner script/interview_queries.rb
-# Same read-only check on the intentionally seeded disposable QA database:
-RAILS_ENV=test mise exec -- bin/rails runner script/interview_queries.rb
 ```
 
 The script prints each relation's SQL, result IDs and PostgreSQL `EXPLAIN` plan.

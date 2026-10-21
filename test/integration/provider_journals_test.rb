@@ -1,18 +1,24 @@
 require "test_helper"
+require_relative "../support/domain_accounts"
 
 class ProviderJournalsTest < ActionDispatch::IntegrationTest
+  include DomainAccounts
+
   setup do
-    Rails.application.load_seed
-    @client = User.find_by!(email: "client@healthie.example").client
-    @other = User.find_by!(email: "unrelated-client@healthie.example").client
-    @provider = User.find_by!(email: "second-provider@healthie.example")
-    @empty_provider = User.find_by!(email: "empty-provider@healthie.example")
-    @entry = @client.journal_entries.order(:id).first
+    User.destroy_all
+    @client = create_test_account("client", "Visible Client").client
+    @other = create_test_account("client", "Unrelated Client").client
+    @provider = create_test_account("provider", "Enrolled Reader")
+    @empty_provider = create_test_account("provider", "Unenrolled Reader")
+    @client.enrollments.create!(provider: @provider.provider, plan: :premium)
+    @entry = @client.journal_entries.create!(text: "Earlier visible entry", created_at: Time.utc(2026, 10, 17))
+    @client.journal_entries.create!(text: "Later visible entry", created_at: Time.utc(2026, 10, 19))
+    @other.journal_entries.create!(text: "Unrelated private entry")
   end
 
   def login(user)
     delete destroy_user_session_path
-    post user_session_path, params: { user: { email: user.email, password: "Healthie-demo-2026" } }
+    post user_session_path, params: { user: { email: user.email, password: DomainAccounts::PASSWORD } }
   end
 
   test "provider navigation individual journals and feed show exactly current entries newest first" do
@@ -20,7 +26,7 @@ class ProviderJournalsTest < ActionDispatch::IntegrationTest
     get provider_home_path
     assert_select "a[href=?]", journal_entries_path, text: "Combined journal feed"
     get enrollments_path
-    assert_select "a[href=?]", client_journal_entries_path(@client), text: @client.name
+    assert_select "a[href=?]", client_journal_entries_path(@client), text: /#{Regexp.escape(@client.name)}/
     [ journal_entries_path, client_journal_entries_path(@client) ].each do |path|
       get path
       assert_response :success
@@ -55,7 +61,7 @@ class ProviderJournalsTest < ActionDispatch::IntegrationTest
     assert ClientPolicy.new(@empty_provider, @client).show?
     get client_journal_entries_path(@client)
     assert_response :success
-    assert_select "article", count: 3
+    assert_select "article", count: 2
     get journal_entry_path(@entry)
     assert_response :success
     expected = @client.journal_entries.order(:id).pluck(:id, :text)

@@ -1,14 +1,29 @@
-const { test, expect } = require('@playwright/test');
+const { test, expect } = require('../support/browser');
 
 async function signIn(page, login) {
   await page.goto('/users/sign_in');
-  await page.getByLabel('Email').fill(`${login}@healthie.example`);
-  await page.getByLabel('Password', { exact: true }).fill('Healthie-demo-2026');
+  await page.getByLabel('Email').fill(`${login}@browser.example.test`);
+  await page.getByLabel('Password', { exact: true }).fill('Focused-tests-2026');
   await page.getByRole('button', { name: 'Sign in', exact: true }).click();
   await expect(page).toHaveURL(login.includes('provider') ? /\/provider$/ : /\/client$/);
 }
 
-test('client Basic/Premium enrollment flow and provider read-only boundaries', async ({ page, browser }, testInfo) => {
+test('client Basic/Premium enrollment flow and provider read-only boundaries', async ({ page, browser, scenario }, testInfo) => {
+  scenario({
+    accounts: {
+      "client": {"role": "client", "name": "Quinn Avery"},
+      "provider": {"role": "provider", "name": "Robin Lane"},
+      "second-provider": {"role": "provider", "name": "Drew Ellis"},
+      "empty-provider": {"role": "provider", "name": "Avery Blake"},
+      "unrelated-client": {"role": "client", "name": "Rowan Hayes"},
+      "empty-client": {"role": "client", "name": "Emery Hale"},
+    },
+    enrollments: [
+      {"client": "client", "provider": "provider", "plan": "basic", "created_at": "2026-10-17T09:00:00Z"},
+      {"client": "client", "provider": "second-provider", "plan": "premium", "created_at": "2026-10-19T09:00:00Z"},
+      {"client": "unrelated-client", "provider": "provider", "plan": "premium", "created_at": "2026-10-18T09:00:00Z"},
+    ],
+  });
   await signIn(page, 'empty-client');
   await page.getByRole('link', { name: 'My providers' }).click();
   await expect(page.getByText('No current relationships.')).toBeVisible();
@@ -16,14 +31,14 @@ test('client Basic/Premium enrollment flow and provider read-only boundaries', a
   await expect(page.getByLabel('Provider', { exact: true }).locator('option')).toHaveCount(3);
   await expect(page.locator('main')).toContainText('existing and future journal entries');
   await page.screenshot({ path: testInfo.outputPath('empty-relationships.png'), fullPage: true });
-  const providerId = await page.getByLabel('Provider', { exact: true }).locator('option', { hasText: 'Morgan Patel' }).getAttribute('value');
-  await page.getByLabel('Provider', { exact: true }).selectOption({ label: 'Morgan Patel' });
+  const providerId = await page.getByLabel('Provider', { exact: true }).locator('option', { hasText: 'Robin Lane' }).getAttribute('value');
+  await page.getByLabel('Provider', { exact: true }).selectOption({ label: 'Robin Lane' });
   await page.getByRole('button', { name: 'Add provider', exact: true }).click();
   await expect(page.locator('tbody tr')).toHaveCount(1);
-  await expect(page.locator('tbody tr')).toContainText('Morgan Patel');
+  await expect(page.locator('tbody tr')).toContainText('Robin Lane');
   await expect(page.locator('tbody tr')).toContainText('Basic');
   await expect(page.getByLabel('Provider', { exact: true }).locator('option')).toHaveCount(2);
-  await expect(page.getByLabel('Provider', { exact: true })).not.toContainText('Morgan Patel');
+  await expect(page.getByLabel('Provider', { exact: true })).not.toContainText('Robin Lane');
   const enrollmentURL = await page.locator('tbody form').getAttribute('action');
   const duplicate = await page.request.post('/enrollments', { form: { 'enrollment[provider_id]': providerId, 'enrollment[plan]': 'premium' } });
   expect(duplicate.status()).toBe(422);
@@ -32,11 +47,11 @@ test('client Basic/Premium enrollment flow and provider read-only boundaries', a
   await expect(page.locator('tbody tr')).toHaveCount(1);
   await expect(page.locator('tbody tr')).toContainText('Basic');
   await page.screenshot({ path: testInfo.outputPath('basic-added.png'), fullPage: true });
-  await page.getByLabel('Provider', { exact: true }).selectOption({ label: 'Taylor Reed' });
+  await page.getByLabel('Provider', { exact: true }).selectOption({ label: 'Drew Ellis' });
   await page.getByLabel('Plan', { exact: true }).selectOption('premium');
   await page.getByRole('button', { name: 'Add provider', exact: true }).click();
   await expect(page.locator('tbody tr')).toHaveCount(2);
-  await expect(page.locator('tbody tr').filter({ hasText: 'Taylor Reed' })).toContainText('Premium');
+  await expect(page.locator('tbody tr').filter({ hasText: 'Drew Ellis' })).toContainText('Premium');
   await expect(page.getByLabel('Provider', { exact: true }).locator('option')).toHaveCount(1);
   await page.screenshot({ path: testInfo.outputPath('premium-added.png'), fullPage: true });
 
@@ -45,7 +60,7 @@ test('client Basic/Premium enrollment flow and provider read-only boundaries', a
   await signIn(providerPage, 'provider');
   await providerPage.getByRole('link', { name: 'My clients' }).click();
   await expect(providerPage.locator('tbody tr')).toHaveCount(3);
-  await expect(providerPage.locator('tbody tr').filter({ hasText: 'Jamie Brooks' })).toContainText('Basic');
+  await expect(providerPage.locator('tbody tr').filter({ hasText: 'Emery Hale' })).toContainText('Basic');
   await expect(providerPage.getByRole('button', { name: /Remove|Add provider/ })).toHaveCount(0);
   expect((await providerPage.request.post('/enrollments', { form: { 'enrollment[provider_id]': providerId } })).status()).toBe(403);
   expect((await providerPage.request.delete(enrollmentURL)).status()).toBe(403);
@@ -57,18 +72,18 @@ test('client Basic/Premium enrollment flow and provider read-only boundaries', a
   expect((await otherPage.request.delete(enrollmentURL)).status()).toBe(404);
   await otherPage.getByRole('link', { name: 'My providers' }).click();
   await expect(otherPage.locator('tbody tr')).toHaveCount(2);
-  await expect(otherPage.locator('tbody tr').filter({ hasText: 'Taylor Reed' })).toContainText('Premium');
+  await expect(otherPage.locator('tbody tr').filter({ hasText: 'Drew Ellis' })).toContainText('Premium');
 
-  await page.getByRole('button', { name: 'Remove Morgan Patel', exact: true }).click();
+  await page.getByRole('button', { name: 'Remove Robin Lane', exact: true }).click();
   await expect(page.locator('tbody tr')).toHaveCount(1);
   await expect(page.getByLabel('Provider', { exact: true }).locator('option')).toHaveCount(2);
-  await expect(page.getByLabel('Provider', { exact: true })).toContainText('Morgan Patel');
+  await expect(page.getByLabel('Provider', { exact: true })).toContainText('Robin Lane');
   await page.screenshot({ path: testInfo.outputPath('relationship-removed.png'), fullPage: true });
   await providerPage.reload();
   await expect(providerPage.locator('tbody tr')).toHaveCount(2);
-  await expect(providerPage.locator('main')).not.toContainText('Jamie Brooks');
+  await expect(providerPage.locator('main')).not.toContainText('Emery Hale');
   await providerPage.screenshot({ path: testInfo.outputPath('provider-after-removal.png'), fullPage: true });
-  await page.getByRole('button', { name: 'Remove Taylor Reed', exact: true }).click();
+  await page.getByRole('button', { name: 'Remove Drew Ellis', exact: true }).click();
   await expect(page.getByText('No current relationships.')).toBeVisible();
   await otherContext.close();
   await providerContext.close();

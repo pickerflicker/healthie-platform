@@ -1,22 +1,26 @@
 require "test_helper"
+require_relative "../support/domain_accounts"
 
 class EnrollmentTest < ActiveSupport::TestCase
+  include DomainAccounts
+
   setup do
-    Rails.application.load_seed
-    @client = User.find_by!(email: "client@healthie.example").client
-    @provider = User.find_by!(email: "provider@healthie.example").provider
-    @empty_provider = User.find_by!(email: "empty-provider@healthie.example").provider
+    @client = create_test_account("client", "Enrollment Client").client
+    @other = create_test_account("client", "Other Enrollment Client").client
+    @provider = create_test_account("provider", "Enrollment Provider").provider
+    @second = create_test_account("provider", "Second Enrollment Provider").provider
+    @empty_provider = create_test_account("provider", "Available Provider").provider
+    @client.enrollments.create!(provider: @provider, plan: :basic)
+    @client.enrollments.create!(provider: @second, plan: :premium)
+    @other.enrollments.create!(provider: @provider, plan: :premium)
   end
 
-  test "both relationship queries and repeatable seeds include shared different plans and empty examples" do
-    ids = Enrollment.order(:id).pluck(:id)
-    Rails.application.load_seed
-    assert_equal ids, Enrollment.order(:id).pluck(:id)
-    assert_equal %w[client@healthie.example unrelated-client@healthie.example], @provider.clients.joins(:user).reorder("users.email").pluck("users.email")
-    assert_equal %w[provider@healthie.example second-provider@healthie.example], @client.providers.joins(:user).reorder("users.email").pluck("users.email")
+  test "both relationship queries include shared clients different plans and empty profiles" do
+    assert_equal [ @client.id, @other.id ], @provider.clients.order(:id).pluck(:id)
+    assert_equal [ @provider.id, @second.id ], @client.providers.order(:id).pluck(:id)
     assert_equal %w[basic premium], @client.enrollments.order(:plan).pluck(:plan)
     assert_empty @empty_provider.clients
-    assert_empty User.find_by!(email: "empty-client@healthie.example").client.providers
+    assert_empty create_test_account("client", "Empty Enrollment Client").client.providers
   end
 
   test "plans ownership references and duplicates are validated and enforced by the database" do
@@ -51,6 +55,7 @@ class EnrollmentTest < ActiveSupport::TestCase
   end
 
   test "removing a relationship preserves client journal and other relationships" do
+    @client.journal_entries.create!(text: "Journal survives relationship removal")
     journals = @client.journal_entries.order(:id).pluck(:id, :text)
     @client.enrollments.find_by!(provider: @provider).destroy!
     assert Client.exists?(@client.id)

@@ -33,7 +33,7 @@ class EnrollmentOrderTest < ActionDispatch::IntegrationTest
 
     [ [ @provider.user, @clients.values_at(1, 0, 2).map(&:name) ],
       [ @client.user, @providers.values_at(1, 0, 2).map(&:name) ] ].each do |user, names|
-      post user_session_path, params: { user: { email: user.email, password: "Healthie-demo-2026" } }
+      post user_session_path, params: { user: { email: user.email, password: "Ordering-tests-2026" } }
       get enrollments_path
       assert_response :success
       assert_select "tbody tr td:first-child", text: /./, count: 3
@@ -101,8 +101,8 @@ class EnrollmentOrderTest < ActionDispatch::IntegrationTest
 
   def account(role)
     number = @users.size
-    User.create_account!(name: "Ordering #{number}", email: "ordering-#{SecureRandom.hex(6)}@healthie.example",
-      password: "Healthie-demo-2026", role: role).tap do |user|
+    User.create_account!(name: "Ordering #{number}", email: "ordering-#{SecureRandom.hex(6)}@example.test",
+      password: "Ordering-tests-2026", role: role).tap do |user|
       # Older profiles can acquire newer relationships; edits must not move them.
       user.public_send(role).update_columns(created_at: Time.utc(2020, 1, 1) + number.days)
       @users << user
