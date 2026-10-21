@@ -1,2 +1,8 @@
-#!/usr/bin/env ruby
-exec "./bin/rails", "server", *ARGV
+#!/usr/bin/env bash
+set -euo pipefail
+cd "$(dirname "$0")/.."
+npm run build:css
+npm run watch:css &
+css_pid=$!
+trap 'kill "$css_pid" 2>/dev/null || true' EXIT
+bin/rails server "$@"

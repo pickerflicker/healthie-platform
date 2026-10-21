@@ -1,6 +1,15 @@
-<h1>Sign in</h1>
-<%= form_for(resource, as: resource_name, url: session_path(resource_name)) do |f| %>
-  <p><%= f.label :email %><br><%= f.email_field :email, autofocus: true, autocomplete: "email", required: true %></p>
-  <p><%= f.label :password %><br><%= f.password_field :password, autocomplete: "current-password", required: true %></p>
-  <%= f.submit "Sign in" %>
+<h1>Welcome back</h1>
+<p>Sign in to your Healthie workspace.</p>
+<%= form_for(resource, as: resource_name, url: session_path(resource_name), html: { data: { controller: "pending", action: "turbo:submit-start->pending#start turbo:submit-end->pending#finish" } }) do |f| %>
+  <div class="fieldset">
+    <%= f.label :email, class: "field-label" %>
+    <%= f.email_field :email, autofocus: true, autocomplete: "email", required: true, class: "input w-full", placeholder: "you@example.com" %>
+  </div>
+  <div class="fieldset">
+    <%= f.label :password, class: "field-label" %>
+    <%= f.password_field :password, autocomplete: "current-password", required: true, class: "input w-full" %>
+  </div>
+  <%= f.submit "Sign in", class: "btn btn-primary", data: { turbo_submits_with: "Signing in…" } %>
+  <p class="pending" role="status" data-pending-target="message" hidden>Signing in…</p>
 <% end %>
+<p class="auth-foot">A calm place to reconnect with your care.</p>

@@ -1,9 +1,11 @@
-<h1>Edit credentials</h1>
-<p>Choose any credentials you want displayed alongside your name. Leave all unchecked to display your name alone.</p>
+<nav class="page-breadcrumb" aria-label="Breadcrumb"><%= link_to "Provider home", provider_home_path %><span aria-hidden="true">›</span><span>Edit credentials</span></nav>
+<div class="page-heading"><div><h1>Edit credentials</h1>
+<p>Choose any credentials you want displayed alongside your name. Leave all unchecked to display your name alone.</p></div></div>
+<div class="form-panel">
 <% if @provider.errors.any? %>
-  <div role="alert" id="credential-errors"><%= @provider.errors.full_messages.to_sentence %></div>
+  <div class="alert alert-error" role="alert" id="credential-errors"><%= @provider.errors.full_messages.to_sentence %></div>
 <% end %>
-<%= form_with model: @provider, url: provider_home_path, method: :patch do |form| %>
+<%= form_with model: @provider, url: provider_home_path, method: :patch, data: { controller: "pending", action: "turbo:submit-start->pending#start turbo:submit-end->pending#finish" } do |form| %>
   <%= tag.fieldset aria: { describedby: ("credential-errors" if @provider.errors.any?) } do %>
     <legend>Credentials</legend>
     <%= hidden_field_tag "provider[credentials][]", "", id: nil %>
@@ -13,7 +15,7 @@
           <legend><%= heading %></legend>
           <% choices.each do |value, description| %>
             <p class="credential-choice">
-              <%= check_box_tag "provider[credentials][]", value, @provider.credentials.include?(value), id: "credential_#{value}" %>
+              <%= check_box_tag "provider[credentials][]", value, @provider.credentials.include?(value), id: "credential_#{value}", class: "checkbox checkbox-primary" %>
               <%= label_tag "credential_#{value}", "#{value} — #{description}" %>
             </p>
           <% end %>
@@ -21,6 +23,7 @@
       <% end %>
     </div>
   <% end %>
-  <%= form.submit "Save credentials" %>
+  <div class="form-actions"><%= form.submit "Save credentials", class: "btn btn-primary", data: { turbo_submits_with: "Saving…" } %><%= link_to "Cancel", provider_home_path, class: "btn btn-ghost" %></div>
+  <p class="pending" role="status" data-pending-target="message" hidden>Saving your credentials…</p>
 <% end %>
-<p><%= link_to "Back to provider home", provider_home_path %></p>
+</div>

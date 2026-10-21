@@ -26,6 +26,7 @@ test('enrollment age orders both visible lists; re-enrollment refreshes warm cac
   await expect(page.locator('tbody tr td:first-child')).toHaveText(['Drew Ellis', 'Robin Lane']);
   await page.screenshot({ path: testInfo.outputPath('client-enrollment-order.png'), fullPage: true });
   await page.getByRole('button', { name: 'Remove Robin Lane', exact: true }).click();
+  await page.getByRole('dialog').getByRole('button', { name: 'Remove provider', exact: true }).click();
   await expect(page.locator('tbody tr td:first-child')).toHaveText(['Drew Ellis']);
   await page.getByLabel('Provider', { exact: true }).selectOption({ label: 'Robin Lane' });
   await page.getByRole('button', { name: 'Add provider', exact: true }).click();

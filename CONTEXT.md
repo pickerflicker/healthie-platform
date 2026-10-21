@@ -108,3 +108,7 @@ Canonical Linear parent: PIC-273 — https://linear.app/pickerflicker/issue/PIC-
 ## Implementation ticket draft
 
 The to-tickets step prepared eight proposed child issues under PIC-273 in docs/ticket-plan.md, with complete acceptance/validation/handoff text. Publication awaits Steven's approval of granularity and blocking edges. Ticket 1 is the initial local-stack frontier; ticket 2 establishes local Symphony/review-gate execution, and ticket 3 handles post-base GitHub/Linear integration. App slices cover login, client journals, relationships, provider journal reads and the narrowly scoped Redis cache. No child issues have been published or activated, and the parent spec was not modified.
+
+## Approved interface direction
+
+PIC-287 applies the approved Off-white calm design across existing roles, journal/relationship flows, optional provider credentials and public errors. Keep Rails ERB, Propshaft, Devise, Pundit, importmap and Hotwire; compiled Tailwind CSS and daisyUI supply one light theme, with bundled Manrope/Lora fonts, responsive role navigation, accessible confirmations and server-backed feedback. Existing product, permission, query/cache and credential decisions remain authoritative. See [frontend build and design documentation](docs/frontend.md) for the durable reference, build paths and dependency decisions.

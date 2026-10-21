@@ -1,9 +1,17 @@
-<h1>Provider home</h1>
-<p>Welcome <%= provider_name(@provider.name, @provider.credentials) %>.</p>
-<p><%= @provider.email %></p>
-<p>Your provider workspace is ready.</p>
-<% if policy(@provider).edit? %>
-  <p><%= link_to "Edit credentials", edit_provider_path %></p>
-<% end %>
-<p><%= link_to "My clients", enrollments_path %></p>
-<p><%= link_to "Combined journal feed", journal_entries_path %></p>
+<div class="page-heading"><div><h1>Good to see you, <%= @provider.name %>.</h1><p>Your provider workspace is ready.</p></div></div>
+<p class="small muted">Welcome <%= provider_name(@provider.name, @provider.credentials) %>.</p>
+<p class="small muted"><%= @provider.email %></p>
+<% if policy(@provider).edit? %><p class="mt-4"><%= link_to "Edit credentials", edit_provider_path, class: "link link-primary" %></p><% end %>
+<div class="home-cards">
+  <section class="card bg-base-100 home-card">
+    <span class="home-icon" aria-hidden="true">♡</span>
+    <h2>My clients</h2><p>See your current clients and open their journals.</p>
+    <%= link_to "My clients", enrollments_path, class: "btn btn-outline" %>
+  </section>
+  <section class="card bg-base-100 home-card">
+    <span class="home-icon" aria-hidden="true">✎</span>
+    <h2>Combined journal feed</h2><p>Catch up on reflections from all your current clients.</p>
+    <%= link_to "Combined journal feed", journal_entries_path, class: "btn btn-outline" %>
+  </section>
+</div>
+<section class="hello-note"><h2>Care starts with listening.</h2><p>Journal entries give you a little context for your next conversation. Your access is read-only and follows your current client relationships.</p></section>

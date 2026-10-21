@@ -2,5 +2,7 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 export PATH="/Applications/Docker.app/Contents/Resources/bin:$PATH"
+npm ci
+npm run build:css
 export HEALTHIE_SOURCE_DIR="$PWD"
 docker compose up -d --build --wait web

@@ -1,0 +1,16 @@
+<div data-controller="confirmation">
+  <button type="button" class="btn btn-ghost text-error-content" aria-haspopup="dialog" data-action="confirmation#open" aria-label="<%= trigger_label %>"><%= trigger_text %></button>
+  <dialog class="modal" aria-labelledby="<%= dialog_id %>-title" aria-describedby="<%= dialog_id %>-description" data-confirmation-target="dialog" data-action="close->confirmation#restoreFocus cancel->confirmation#cancel turbo:before-cache@document->confirmation#reset">
+    <div class="modal-box">
+      <h2 id="<%= dialog_id %>-title"><%= title %></h2>
+      <p id="<%= dialog_id %>-description"><%= description %></p>
+      <div class="modal-action">
+        <button type="button" class="btn btn-outline" data-action="confirmation#close" autofocus><%= cancel_text %></button>
+        <%= form_with url: url, method: :delete, data: { controller: "pending", action: "turbo:submit-start->pending#start turbo:submit-end->pending#finish" } do |form| %>
+          <%= form.submit confirm_text, class: "btn btn-ghost text-error-content", data: { turbo_submits_with: "Please wait…" } %>
+          <p class="pending" role="status" data-pending-target="message" hidden>Saving your change…</p>
+        <% end %>
+      </div>
+    </div>
+  </dialog>
+</div>

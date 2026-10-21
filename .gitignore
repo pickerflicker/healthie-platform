@@ -41,3 +41,6 @@ test-results/
 # Python helpers used by the agent launcher.
 __pycache__/
 *.py[cod]
+
+/app/assets/builds/*
+!/app/assets/builds/.keep

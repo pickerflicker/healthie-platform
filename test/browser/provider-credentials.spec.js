@@ -65,6 +65,7 @@ test('provider edits multiple credentials and clears them; client labels refresh
   await group.getByLabel('AuD — Doctor of Audiology', { exact: true }).check();
   await page.getByRole('button', { name: 'Save credentials', exact: true }).click();
   await clientPage.getByRole('button', { name: 'Remove Jordan Brooks', exact: true }).click();
+  await clientPage.getByRole('dialog').getByRole('button', { name: 'Remove provider', exact: true }).click();
   await expect(clientPage.getByLabel('Provider', { exact: true }).locator('option')).toHaveText(['Jordan Brooks, AuD', 'Avery Quinn']);
   await clientPage.screenshot({ path: testInfo.outputPath('selector-credentials.png'), fullPage: true });
   await clientContext.close();

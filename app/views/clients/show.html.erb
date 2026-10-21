@@ -1,7 +1,15 @@
-<h1>Client home</h1>
-<p>Welcome <%= @client.name %>.</p>
-<p><%= @client.email %></p>
-<p>Your client workspace is ready.</p>
-
-<p><%= link_to "My journal", journal_entries_path %></p>
-<p><%= link_to "My providers", enrollments_path %></p>
+<div class="page-heading"><div><h1>Good to see you, <%= @client.name %>.</h1><p>A little reflection, at your pace.</p></div></div>
+<p class="small muted"><%= @client.email %></p>
+<div class="home-cards">
+  <section class="card bg-base-100 home-card">
+    <span class="home-icon" aria-hidden="true">✎</span>
+    <h2>My journal</h2><p>Make a little space to reflect on meals, movement, and your day.</p>
+    <%= link_to "My journal", journal_entries_path, class: "btn btn-outline" %>
+  </section>
+  <section class="card bg-base-100 home-card">
+    <span class="home-icon" aria-hidden="true">♡</span>
+    <h2>My providers</h2><p>View your providers and choose who can read your journal.</p>
+    <%= link_to "My providers", enrollments_path, class: "btn btn-outline" %>
+  </section>
+</div>
+<section class="hello-note"><h2>Your day doesn’t need a perfect summary.</h2><p>Your journal is a place for everyday reflection. Your current providers can read your entries to better understand your day.</p></section>

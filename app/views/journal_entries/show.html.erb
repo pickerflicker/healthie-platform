@@ -1,9 +1,20 @@
-<h1>Journal entry</h1>
-<% if current_user.provider? %>
-  <p><%= link_to @journal_entry.client.name, client_journal_entries_path(@journal_entry.client) %> · Read-only</p>
-<% end %>
-<p>Created <%= @journal_entry.created_at.to_fs(:long) %></p>
-<%= simple_format(@journal_entry.text) %>
-<%= link_to "Edit entry", edit_journal_entry_path(@journal_entry) if policy(@journal_entry).update? %>
-<%= button_to "Delete entry", @journal_entry, method: :delete if policy(@journal_entry).destroy? %>
-<p><%= link_to current_user.provider? ? "Combined journal feed" : "My journal", journal_entries_path %></p>
+<nav class="page-breadcrumb" aria-label="Breadcrumb">
+  <% if current_user.provider? %><%= link_to "#{@journal_entry.client.name}'s journal", client_journal_entries_path(@journal_entry.client) %><% else %><%= link_to "My journal", journal_entries_path %><% end %>
+  <span aria-hidden="true">›</span><span>Journal entry</span>
+</nav>
+<div class="page-heading"><div><h1>Journal entry</h1><p>Created <%= @journal_entry.created_at.to_fs(:long) %></p></div>
+  <%= link_to "Edit entry", edit_journal_entry_path(@journal_entry), class: "btn btn-outline" if policy(@journal_entry).update? %>
+  <% if current_user.provider? %><span class="read-label">Read-only</span><% end %>
+</div>
+<article class="entry-detail">
+  <% if current_user.provider? %><p class="entry-author"><%= link_to @journal_entry.client.name, client_journal_entries_path(@journal_entry.client) %></p><% end %>
+  <div class="entry-text"><%= simple_format(@journal_entry.text) %></div>
+  <div class="detail-actions">
+    <p class="small muted"><%= current_user.client? ? "This entry is shared with your current providers." : "Only the client can edit or delete their entries." %></p>
+    <% if policy(@journal_entry).destroy? %>
+      <%= render "shared/confirmation", trigger_label: "Delete entry", trigger_text: "Delete entry", dialog_id: "delete-entry", title: "Delete this entry?", description: "This entry will be permanently deleted. Your providers will no longer be able to read it.", cancel_text: "Keep entry", confirm_text: "Delete entry", url: journal_entry_path(@journal_entry) %>
+    <% end %>
+  </div>
+</article>
+<%= render "shared/sharing_note" %>
+<% if current_user.provider? %><p class="mt-6"><%= link_to "Combined journal feed", journal_entries_path, class: "link link-primary" %></p><% end %>

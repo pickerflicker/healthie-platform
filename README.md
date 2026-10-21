@@ -43,6 +43,10 @@ mise exec -- bin/acceptance
 
 Review preview: http://127.0.0.1:3000. `bin/preview` binds the shared web service to this checkout. `bin/stack stop` preserves database storage. Tests use `healthie_test` and the `healthie:test` Redis namespace; development browsing data is retained. All automated tests create their own accounts and scenarios; none load or depend on `db/seeds.rb`. Browser fixtures reset only the disposable test database records/cache before and after each test, including retries and individual-file runs.
 
+## Interface and CSS build
+
+The approved Off-white calm interface uses compiled Tailwind CSS and daisyUI with ERB/Hotwire. `bin/bootstrap`, `bin/preview`, `bin/check` and `bin/acceptance` compile CSS automatically. Use `mise exec -- bin/dev` for native Rails plus CSS watching. [Frontend documentation](docs/frontend.md) records the design reference, bundled fonts, Docker/asset builds and dependency evidence.
+
 ## Fictional manual demo
 
 **Provider: `provider@healthie.example` — Morgan Patel, RDN + LD.**

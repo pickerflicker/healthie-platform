@@ -1,15 +1,16 @@
 <% if providers.empty? %>
-  <p>No current relationships.</p>
+  <section class="empty-state"><span class="home-icon" aria-hidden="true">♡</span><h2>Your care, at your pace</h2><p>No current relationships.</p></section>
 <% else %>
-  <table>
-    <thead><tr><th>Provider</th><th>Plan</th><th>Action</th></tr></thead>
+  <table class="provider-list" aria-label="Current providers">
+    <colgroup><col><col class="plan-column"><col class="action-column"></colgroup>
+    <thead class="sr-only"><tr><th>Provider</th><th>Plan</th><th>Action</th></tr></thead>
     <tbody>
       <% providers.each do |provider| %>
-        <tr>
-          <td><%= provider_name(provider[:name], provider[:credentials]) %></td>
-          <td><%= provider[:plan].humanize %></td>
+        <tr class="provider-row">
+          <td><span class="person-name"><%= provider_name(provider[:name], provider[:credentials]) %></span></td>
+          <td class="plan-cell"><span class="badge <%= provider[:plan] == "premium" ? "badge-accent" : "badge-secondary" %>"><%= provider[:plan].humanize %></span></td>
           <% if policy(enrollment).destroy? %>
-            <td><%= button_to "Remove #{provider[:name]}", enrollment_path(provider[:enrollment_id]), method: :delete %></td>
+            <td class="action-cell"><%= render "shared/confirmation", trigger_label: "Remove #{provider[:name]}", trigger_text: "Remove", dialog_id: "remove-#{provider[:enrollment_id]}", title: "Remove #{provider[:name]}?", description: "#{provider[:name]} will lose access to all your journal entries. Your entries will be kept, and your other current providers will keep their access.", cancel_text: "Keep provider", confirm_text: "Remove provider", url: enrollment_path(provider[:enrollment_id]) %></td>
           <% end %>
         </tr>
       <% end %>

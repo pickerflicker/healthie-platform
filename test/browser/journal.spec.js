@@ -41,6 +41,7 @@ test('client journal persisted CRUD journey', async ({ page, scenario }, testInf
   await expect(page.locator('article').first()).toContainText('QA journal: updated after lunch.');
   await page.goto(entryURL);
   await page.getByRole('button', { name: 'Delete entry' }).click();
+  await page.getByRole('dialog').getByRole('button', { name: 'Delete entry', exact: true }).click();
   await expect(page).toHaveURL(/\/journal_entries$/);
   await page.reload();
   await expect(page.locator('article')).toHaveCount(3);
