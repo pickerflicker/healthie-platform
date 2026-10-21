@@ -15,6 +15,11 @@ User.transaction do
   end
 end
 
+# Small manual browsing examples; accounts created by hand are untouched.
+{ "provider" => %w[RDN LD], "second-provider" => %w[MD], "empty-provider" => [] }.each do |login, credentials|
+  User.find_by!(email: "#{login}@healthie.example").provider.update!(credentials: credentials)
+end
+
 Enrollment.transaction do
   # Account/profile ages deliberately disagree with enrollment age. The provider-facing
   # relationships tie on time so their enrollment IDs decide the displayed order.

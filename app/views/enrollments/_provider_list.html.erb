@@ -6,7 +6,7 @@
     <tbody>
       <% providers.each do |provider| %>
         <tr>
-          <td><%= provider[:name] %></td>
+          <td><%= provider_name(provider[:name], provider[:credentials]) %></td>
           <td><%= provider[:plan].humanize %></td>
           <% if policy(enrollment).destroy? %>
             <td><%= button_to "Remove #{provider[:name]}", enrollment_path(provider[:enrollment_id]), method: :delete %></td>

@@ -134,7 +134,7 @@ Use Docker Desktop and one shared Compose stack for Rails, PostgreSQL and Redis.
 - Pre-implementing the unknown feature, validation or query that the interviewer will introduce during pairing.
 - Public deployment, additional hosting infrastructure or production operations for this pre-work.
 - An admin role, admin impersonation, multi-role accounts, self-registration, password-recovery/confirmation email flows, social login or a general permission-management UI.
-- Provider-driven client enrollment, provider/client account CRUD, invitations, separate plan editing, billing, payments or subscription history.
+- Provider-driven client enrollment, general provider/client account CRUD (except the PIC-285 own-credentials editor below), invitations, separate plan editing, billing, payments or subscription history.
 - Provider-owned journal entries, provider-specific journal sharing, rich text, attachments, backdating or an independently editable journal date.
 - Journal-feed caching, caching every required query, distributed cache-coherence infrastructure or using cache contents to grant access.
 - Parallel ticket implementation, stacked PRs, automatic merges, extra agent roles or per-ticket application infrastructure stacks.
@@ -159,4 +159,93 @@ lists preload `client: :user`; the client provider-list query uses joins and
 pluck to project serializable display rows into Redis. Cache
 hits preserve that array order; committed membership changes invalidate it.
 Authorization continues to query current enrollments independently of display data.
-Retain the v1 cache key and its one-minute expiry; existing payloads expire naturally.
+PIC-285 uses the v2 cache key with credential arrays and the same one-minute expiry. Old v1 payloads are not read and expire naturally.
+
+## Optional provider credentials (PIC-285)
+
+Providers may edit only their own optional professional credentials from their workspace using labeled checkboxes grouped under Credentials. The supported set is the curated 50-choice U.S.-focused catalog below, in group/choice order. Preserve exact stored/display codes, including mixed case and hyphens. Multiple selections and clearing all are supported; RD/RDN are alternatives with no mutual-exclusion or verification rule.
+
+Store credentials on Provider as a non-null PostgreSQL string array defaulting to empty, with application-level supported-value validation. Assume well-formed credential arrays; normalize the empty checkbox sentinel, duplicates and supported-list order, and reject unsupported codes with feedback. Steven’s 2026-10-21 PR feedback supersedes the earlier credential CHECK and separate expansion migration: keep one add-column migration; the database retains the empty default and non-null requirement. Devise and action-specific Pundit enforce own-profile editing, with ownership derived server-side and only credentials writable. This narrowly extends the account CRUD exclusion; identity, roles, enrollment plans and journal access are unchanged.
+
+Append selected abbreviations to names on provider home, My providers and Add a provider; empty credentials display the name alone. Keep User.name unchanged. Extend the scalar joins/pluck Redis payload with credentials, preserve explicit enrollment ordering and invalidate all enrolled clients only after a committed change. Failed/rolled-back writes and unrelated clients retain their lists. Version the payload to avoid legacy labels. Add a few deterministic manual seed examples; automated tests own their scenarios. ADR 0004 records the array tradeoff; no credentialing subsystem, new infrastructure or larger demo dataset is included.
+
+### Approved credential catalog (expanded 2026-10-20)
+
+These are degrees, licenses/professional designations and certifications, not equivalent roles or proof of practice authority. DO differs from OD; PhD/DNP/PharmD do not imply MD/DO. CNS means Certified Nutrition Specialist. No automatic selections, exclusions or verification. Additional jurisdiction aliases and specialty credentials are deferred.
+
+**Medicine, eye care, dental and chiropractic**
+
+- MD — Doctor of Medicine
+- DO — Doctor of Osteopathic Medicine
+- OD — Doctor of Optometry
+- DDS — Doctor of Dental Surgery
+- DMD — Doctor of Dental Medicine
+- DPM — Doctor of Podiatric Medicine
+- DC — Doctor of Chiropractic
+
+**Nursing and physician assistants**
+
+- RN — Registered Nurse
+- LPN — Licensed Practical Nurse
+- LVN — Licensed Vocational Nurse
+- APRN — Advanced Practice Registered Nurse
+- NP — Nurse Practitioner
+- DNP — Doctor of Nursing Practice
+- BSN — Bachelor of Science in Nursing
+- MSN — Master of Science in Nursing
+- CNM — Certified Nurse-Midwife
+- CRNA — Certified Registered Nurse Anesthetist
+- PA-C — Physician Assistant-Certified
+
+**Nutrition and diabetes care**
+
+- RD — Registered Dietitian
+- RDN — Registered Dietitian Nutritionist
+- LD — Licensed Dietitian
+- LDN — Licensed Dietitian/Nutritionist
+- CNS — Certified Nutrition Specialist
+- CDCES — Certified Diabetes Care and Education Specialist
+
+**Mental health and academic degrees**
+
+- PhD — Doctor of Philosophy
+- PsyD — Doctor of Psychology
+- LCSW — Licensed Clinical Social Worker
+- LMFT — Licensed Marriage and Family Therapist
+- LPC — Licensed Professional Counselor
+- LMHC — Licensed Mental Health Counselor
+- LPCC — Licensed Professional Clinical Counselor
+- MSW — Master of Social Work
+- LSW — Licensed Social Worker
+- LICSW — Licensed Independent Clinical Social Worker
+- NCC — National Certified Counselor
+- BCBA — Board Certified Behavior Analyst
+
+**Physical and occupational therapy**
+
+- PT — Physical Therapist
+- DPT — Doctor of Physical Therapy
+- OTD — Doctor of Occupational Therapy
+- OTR — Occupational Therapist Registered
+- PTA — Physical Therapist Assistant
+- COTA — Certified Occupational Therapy Assistant
+
+**Pharmacy**
+
+- PharmD — Doctor of Pharmacy
+- RPh — Registered Pharmacist
+
+**Audiology and speech-language pathology**
+
+- AuD — Doctor of Audiology
+- CCC-A — Certificate of Clinical Competence in Audiology
+- CCC-SLP — Certificate of Clinical Competence in Speech-Language Pathology
+
+**Naturopathic medicine and acupuncture**
+
+- ND — Doctor of Naturopathic Medicine
+- LAc — Licensed Acupuncturist
+
+**Health and wellness coaching**
+
+- NBC-HWC — National Board Certified Health & Wellness Coach

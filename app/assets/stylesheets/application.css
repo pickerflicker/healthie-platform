@@ -18,3 +18,9 @@ a { color: #155c58; }
 table { border-collapse: collapse; }
 th, td { padding: .5rem 1rem .5rem 0; text-align: left; }
 select { padding: .4rem; }
+
+.credential-groups { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr)); gap: 1rem; margin: 1rem 0; }
+.credential-category { min-width: 0; border: 1px solid #b8cdca; border-radius: .5rem; padding: 1rem; }
+.credential-category legend { font-weight: 600; padding: 0 .3rem; }
+.credential-choice { display: flex; align-items: baseline; gap: .5rem; margin: .6rem 0; }
+.credential-choice input { flex: none; }
