@@ -1,6 +1,8 @@
 # syntax=docker/dockerfile:1
 # check=error=true
 
+ARG RUBY_VERSION=3.4.11
+
 # This Dockerfile is designed for production, not development. Use with Kamal or build'n'run by hand:
 # docker build -t healthie_platform .
 # docker run -d -p 80:80 -e RAILS_MASTER_KEY=<value from config/master.key> --name healthie_platform healthie_platform
@@ -8,7 +10,13 @@
 # For a containerized dev environment, see Dev Containers: https://guides.rubyonrails.org/getting_started_with_devcontainer.html
 
 # Make sure RUBY_VERSION matches the Ruby version in .ruby-version
-ARG RUBY_VERSION=3.4.11
+FROM node:22.23.3-bookworm-slim AS css
+WORKDIR /css
+COPY package.json package-lock.json ./
+RUN npm ci
+COPY app ./app
+RUN npm run build:css
+
 FROM docker.io/library/ruby:$RUBY_VERSION-slim AS base
 
 # Rails app lives here
@@ -46,13 +54,14 @@ RUN bundle install && \
 
 # Copy application code
 COPY . .
+COPY --from=css /css/app/assets/builds /rails/app/assets/builds
 
 # Precompile bootsnap code for faster boot times.
 # -j 1 disable parallel compilation to avoid a QEMU bug: https://github.com/rails/bootsnap/issues/495
 RUN bundle exec bootsnap precompile -j 1 app/ lib/
 
-# Precompiling assets for production without requiring secret RAILS_MASTER_KEY
-RUN SECRET_KEY_BASE_DUMMY=1 ./bin/rails assets:precompile
+# Precompile without secrets or a live database; this URL provides build-only adapter configuration.
+RUN DATABASE_URL=postgresql://localhost/healthie_build HEALTHIE_CSS_PREBUILT=1 SECRET_KEY_BASE_DUMMY=1 ./bin/rails assets:precompile
 
 
 

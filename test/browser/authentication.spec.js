@@ -28,7 +28,7 @@ test('test-owned identities, denied access, tampering and logout', async ({ page
     }, role === 'provider' ? 'client' : 'provider');
     await page.getByRole('button', { name: 'Sign in', exact: true }).click();
     await expect(page).toHaveURL(new RegExp(`/${role}$`));
-    await expect(page.getByRole('heading', { name: `${role[0].toUpperCase() + role.slice(1)} home` })).toBeVisible();
+    await expect(page.getByRole('heading', { name: `Good to see you, ${name}.` })).toBeVisible();
     await expect(page.locator('main')).toContainText(name);
     await expect(page.locator('main')).toContainText(`${role}@browser.example.test`);
     await page.getByRole('link', { name: `${role[0].toUpperCase() + role.slice(1)} home` }).click();

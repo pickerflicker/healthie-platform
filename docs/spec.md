@@ -249,3 +249,7 @@ These are degrees, licenses/professional designations and certifications, not eq
 **Health and wellness coaching**
 
 - NBC-HWC — National Board Certified Health & Wellness Coach
+
+## Approved interface direction
+
+PIC-287 applies the approved Off-white calm design across existing roles, journal/relationship flows, optional provider credentials and public errors. Keep Rails ERB, Propshaft, Devise, Pundit, importmap and Hotwire; compiled Tailwind CSS and daisyUI supply one light theme, with bundled Manrope/Lora fonts, responsive role navigation, accessible confirmations and server-backed feedback. Existing product, permission, query/cache and credential decisions remain authoritative. See [frontend build and design documentation](frontend.md) for the durable reference, build paths and dependency decisions.

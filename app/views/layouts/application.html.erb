@@ -1,42 +1,68 @@
 <!DOCTYPE html>
-<html>
+<html lang="en" data-theme="off-white-calm">
   <head>
-    <title><%= content_for(:title) || "Healthie Platform" %></title>
+    <title><%= content_for(:title) || "Healthie" %></title>
     <meta name="viewport" content="width=device-width,initial-scale=1">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="application-name" content="Healthie Platform">
-    <meta name="mobile-web-app-capable" content="yes">
     <%= csrf_meta_tags %>
     <%= csp_meta_tag %>
-
     <%= yield :head %>
-
-    <%# Enable PWA manifest for installable apps (make sure to enable in config/routes.rb too!) %>
-    <%#= tag.link rel: "manifest", href: pwa_manifest_path(format: :json) %>
-
-    <link rel="icon" href="/icon.png" type="image/png">
     <link rel="icon" href="/icon.svg" type="image/svg+xml">
-    <link rel="apple-touch-icon" href="/icon.png">
-
-    <%# Includes all stylesheet files in app/assets/stylesheets %>
-    <%= stylesheet_link_tag :app, "data-turbo-track": "reload" %>
+    <%= stylesheet_link_tag "application", "data-turbo-track": "reload" %>
     <%= javascript_importmap_tags %>
   </head>
-
   <body>
-    <header>
-      <strong>Healthie</strong>
-      <% if user_signed_in? %>
-        <nav aria-label="Account">
-          <%= link_to "#{current_user.role.titleize} home", current_user.provider? ? provider_home_path : client_home_path %>
-          <%= button_to "Sign out", destroy_user_session_path, method: :delete %>
-        </nav>
-      <% end %>
-    </header>
-    <main>
-      <% if notice %><p role="status"><%= notice %></p><% end %>
-      <% if alert %><p role="alert"><%= alert %></p><% end %>
-      <%= yield %>
-    </main>
+    <a href="#main" class="skip-link btn btn-primary">Skip to content</a>
+    <% if user_signed_in? %>
+      <div class="shell">
+        <aside class="sidebar">
+          <%= link_to "healthie", workspace_home_path, class: "wordmark", aria: { label: "Healthie home" } %>
+          <div>
+            <p class="side-label"><%= current_user.role.titleize %> space</p>
+            <nav aria-label="Workspace"><ul class="menu side-menu">
+              <% workspace_links.each do |label, path, accessible_label| %>
+                <li><%= link_to label, path, aria: { label: accessible_label, current: ("page" if workspace_current?(path)) } %></li>
+              <% end %>
+            </ul></nav>
+          </div>
+          <p class="side-foot">Small moments.<br>A little perspective.</p>
+        </aside>
+        <div class="workspace">
+          <header class="topbar">
+            <%= link_to "healthie", workspace_home_path, class: "wordmark mobile-brand", aria: { label: "Healthie home" } %>
+            <span class="role-label"><%= current_user.role.titleize %> space</span>
+            <div class="account">
+              <span class="account-name"><%= current_user.name %></span>
+              <span class="person-avatar" aria-hidden="true"><%= initials(current_user.name) %></span>
+              <%= button_to "Sign out", destroy_user_session_path, method: :delete, class: "btn btn-ghost btn-sm", data: { turbo_submits_with: "Signing out…" } %>
+            </div>
+          </header>
+          <nav class="mobile-nav" aria-label="Mobile workspace">
+            <% workspace_links.each do |label, path, accessible_label| %>
+              <%= link_to label, path, aria: { label: accessible_label, current: ("page" if workspace_current?(path)) } %>
+            <% end %>
+          </nav>
+          <main id="main" class="page-content" tabindex="-1">
+            <%= render "shared/flash" %>
+            <%= yield %>
+          </main>
+        </div>
+      </div>
+    <% else %>
+      <div class="auth-page">
+        <aside class="auth-story" aria-label="Healthie">
+          <span class="wordmark">healthie</span>
+          <h2>A little space for your everyday.</h2>
+          <p>Reflect on your day and reconnect with your care.</p>
+          <p class="auth-bottom">Small moments. A little perspective.</p>
+        </aside>
+        <main id="main" class="auth-form-wrap" tabindex="-1">
+          <div class="auth-form">
+            <span class="wordmark">healthie</span>
+            <%= render "shared/flash" %>
+            <%= yield %>
+          </div>
+        </main>
+      </div>
+    <% end %>
   </body>
 </html>

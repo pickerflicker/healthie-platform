@@ -106,7 +106,7 @@ class ProviderJournalsTest < ActionDispatch::IntegrationTest
 
   def assert_unavailable_page
     assert_response :not_found
-    assert_select "main h1", text: "Page not found"
+    assert_select "main h1", text: "We couldn’t find that page."
     assert_select "main a[href=?]", root_path, text: "Return home"
     assert_no_match @entry.text, response.body
     assert_no_match @client.name, response.body

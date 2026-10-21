@@ -1,18 +1,18 @@
-<h1><%= @client ? "#{@client.name}'s journal" : (current_user.provider? ? "Combined journal feed" : "My journal") %></h1>
-<% if current_user.provider? %><p>Read-only journal access for your current clients.</p><% end %>
-<%= link_to "New journal entry", new_journal_entry_path if policy(JournalEntry.new(client: current_user.client)).create? %>
+<% if @client %><nav class="page-breadcrumb" aria-label="Breadcrumb"><%= link_to "My clients", enrollments_path %><span aria-hidden="true">›</span><span><%= @client.name %></span></nav><% end %>
+<div class="page-heading">
+  <div><h1><%= @client ? "#{@client.name}'s journal" : (current_user.provider? ? "Combined journal feed" : "My journal") %></h1><p><%= current_user.provider? ? "Read-only journal access for your current clients." : "Your day, in your own words." %></p></div>
+  <%= link_to "New journal entry", new_journal_entry_path, class: "btn btn-primary" if policy(JournalEntry.new(client: current_user.client)).create? %>
+</div>
+<% if current_user.client? %><div class="soft-note">There’s no perfect entry. A few words are enough.</div><% else %><p class="read-label">Read-only</p><% end %>
+<div class="section-heading"><h2>Recent entries</h2><span class="eyebrow">Latest first</span></div>
 <% if @journal_entries.empty? %>
-  <p>No journal entries yet.</p>
+  <section class="empty-state"><span class="home-icon" aria-hidden="true">✎</span><h2><%= current_user.client? ? "A fresh page for your day" : "A little space, ready for reflection" %></h2><p>No journal entries yet.</p></section>
 <% end %>
 <% @journal_entries.each do |entry| %>
-  <article>
-    <% if current_user.provider? %><p><%= link_to entry.client.name, client_journal_entries_path(entry.client) %></p><% end %>
-    <h2><%= link_to entry.created_at.to_fs(:long), entry %></h2>
-    <%= simple_format(entry.text) %>
+  <article class="card entry-card">
+    <% if current_user.provider? %><p class="entry-author"><%= link_to entry.client.name, client_journal_entries_path(entry.client) %></p><% end %>
+    <div class="entry-date"><h2><%= link_to entry.created_at.to_fs(:long), entry %></h2></div>
+    <div class="entry-text"><%= simple_format(entry.text) %></div>
   </article>
 <% end %>
-<% if current_user.provider? %>
-  <p><%= link_to "My clients", enrollments_path %> · <%= link_to "Combined journal feed", journal_entries_path %></p>
-<% else %>
-  <p><%= link_to "Client home", client_home_path %></p>
-<% end %>
+<%= render "shared/sharing_note" %>

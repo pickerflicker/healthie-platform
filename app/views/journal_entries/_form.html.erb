@@ -1,9 +1,11 @@
-<% if journal_entry.errors.any? %>
-  <div role="alert"><%= journal_entry.errors.full_messages.to_sentence %></div>
-<% end %>
-<%= form_with model: journal_entry do |form| %>
-  <p><%= form.label :text, "Entry text" %><br>
-  <%= form.text_area :text, rows: 10, required: true %></p>
-  <%= form.submit "Save entry" %>
-<% end %>
-<p><%= link_to "My journal", journal_entries_path %></p>
+<div class="form-panel">
+  <% if journal_entry.errors.any? %><div class="alert alert-error" role="alert" id="entry-errors"><span><%= journal_entry.errors.full_messages.to_sentence %></span></div><% end %>
+  <%= form_with model: journal_entry, data: { controller: "pending", action: "turbo:submit-start->pending#start turbo:submit-end->pending#finish" } do |form| %>
+    <%= form.label :text, "Entry text", class: "field-label" %>
+    <%= form.text_area :text, rows: 10, required: true, class: "textarea editor", placeholder: "Today, I noticed…", aria: { invalid: journal_entry.errors.any?, describedby: "entry-hint#{' entry-errors' if journal_entry.errors.any?}" } %>
+    <p id="entry-hint" class="field-hint">A few words are enough. Your entry can be as long as you like.</p>
+    <div class="form-actions"><%= form.submit "Save entry", class: "btn btn-primary", data: { turbo_submits_with: "Saving…" } %><%= link_to "Cancel", journal_entry.persisted? ? journal_entry_path(journal_entry) : journal_entries_path, class: "btn btn-ghost" %></div>
+    <p class="pending" role="status" data-pending-target="message" hidden>Saving your entry…</p>
+  <% end %>
+</div>
+<%= render "shared/sharing_note" %>

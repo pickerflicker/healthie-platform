@@ -14,6 +14,9 @@ User.transaction do
     [ label, User.create_account!(**attributes.symbolize_keys,
       email: "#{label}@browser.example.test", password: DomainAccounts::PASSWORD) ]
   end
+  scenario.fetch("provider_credentials", {}).each do |label, credentials|
+    accounts.fetch(label).provider.update!(credentials: credentials)
+  end
   scenario.fetch("enrollments", []).each do |attributes|
     attributes = attributes.symbolize_keys
     Enrollment.create!(**attributes.except(:client, :provider),

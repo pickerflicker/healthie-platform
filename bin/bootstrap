@@ -3,5 +3,6 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 bundle check || bundle install
 npm ci
+npm run build:css
 bin/rails db:prepare
 RAILS_ENV=test bin/rails db:create db:migrate

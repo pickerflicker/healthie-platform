@@ -70,6 +70,7 @@ test('client Basic/Premium enrollment flow and provider read-only boundaries', a
   await expect(otherPage.locator('tbody tr').filter({ hasText: 'Drew Ellis' })).toContainText('Premium');
 
   await page.getByRole('button', { name: 'Remove Robin Lane', exact: true }).click();
+  await page.getByRole('dialog').getByRole('button', { name: 'Remove provider', exact: true }).click();
   await expect(page.locator('tbody tr')).toHaveCount(1);
   await expect(page.getByLabel('Provider', { exact: true }).locator('option')).toHaveCount(2);
   await expect(page.getByLabel('Provider', { exact: true })).toContainText('Robin Lane');
@@ -79,6 +80,7 @@ test('client Basic/Premium enrollment flow and provider read-only boundaries', a
   await expect(providerPage.locator('main')).not.toContainText('Emery Hale');
   await providerPage.screenshot({ path: testInfo.outputPath('provider-after-removal.png'), fullPage: true });
   await page.getByRole('button', { name: 'Remove Drew Ellis', exact: true }).click();
+  await page.getByRole('dialog').getByRole('button', { name: 'Remove provider', exact: true }).click();
   await expect(page.getByText('No current relationships.')).toBeVisible();
   await otherContext.close();
   await providerContext.close();

@@ -6,7 +6,7 @@ class ApplicationController < ActionController::Base
   stale_when_importmap_changes
 
   rescue_from Pundit::NotAuthorizedError do
-    render plain: "Access denied. This page is not available for your account role.", status: :forbidden
+    render "errors/forbidden", formats: [ :html ], status: :forbidden
   end
 
   rescue_from ActiveRecord::RecordNotFound do

@@ -1,3 +1,10 @@
+FROM node:22.23.3-bookworm-slim AS css
+WORKDIR /css
+COPY package.json package-lock.json ./
+RUN npm ci
+COPY app ./app
+RUN npm run build:css
+
 FROM ruby:3.4.11-slim
 RUN apt-get update -qq && apt-get install --no-install-recommends -y build-essential libpq-dev curl git && rm -rf /var/lib/apt/lists/*
 WORKDIR /app
@@ -5,5 +12,6 @@ ENV BUNDLE_PATH=/usr/local/bundle
 COPY Gemfile Gemfile.lock ./
 RUN bundle install
 COPY . .
+COPY --from=css /css/app/assets/builds /app/app/assets/builds
 EXPOSE 3000
 CMD ["bin/rails", "server", "-b", "0.0.0.0", "-p", "3000"]

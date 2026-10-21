@@ -33,7 +33,7 @@ class AuthenticationTest < ActionDispatch::IntegrationTest
       assert_redirected_to role == "client" ? client_home_path : provider_home_path
       follow_redirect!
       assert_response :success
-      assert_select "h1", "#{role.titleize} home"
+      assert_select "h1", "Good to see you, #{account.name}."
       get role == "client" ? provider_home_path : client_home_path
       assert_response :forbidden
       assert_match "Access denied", response.body
@@ -83,7 +83,7 @@ class AuthenticationTest < ActionDispatch::IntegrationTest
 
     get client_home_path, params: { id: other.client.id, client_id: other.client.id, user_id: other.id, role: "provider" }
     assert_response :success
-    assert_select "h1", "Client home"
+    assert_select "h1", "Good to see you, Test Client."
     assert_select "main", text: /#{Regexp.escape(client.name)}/
     assert_select "main", text: /#{Regexp.escape(client.email)}/
     assert_select "main", text: /other@example.com/, count: 0
@@ -108,7 +108,7 @@ class AuthenticationTest < ActionDispatch::IntegrationTest
 
     get provider_home_path, params: { id: other.provider.id, provider_id: other.provider.id, user_id: other.id, role: "client" }
     assert_response :success
-    assert_select "h1", "Provider home"
+    assert_select "h1", "Good to see you, Test Provider."
     assert_select "main", text: /#{Regexp.escape(provider.name)}/
     assert_select "main", text: /#{Regexp.escape(provider.email)}/
     assert_select "main", text: /other-provider@example.com/, count: 0
