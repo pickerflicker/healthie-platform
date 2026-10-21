@@ -6,16 +6,16 @@ class EnrollmentTest < ActiveSupport::TestCase
 
   setup do
     @client = create_test_account("client", "Enrollment Client").client
-    @other = create_test_account("client", "Other Enrollment Client").client
     @provider = create_test_account("provider", "Enrollment Provider").provider
+  end
+
+  test "both relationship queries include shared clients different plans and empty profiles" do
+    @other = create_test_account("client", "Other Enrollment Client").client
     @second = create_test_account("provider", "Second Enrollment Provider").provider
     @empty_provider = create_test_account("provider", "Available Provider").provider
     @client.enrollments.create!(provider: @provider, plan: :basic)
     @client.enrollments.create!(provider: @second, plan: :premium)
     @other.enrollments.create!(provider: @provider, plan: :premium)
-  end
-
-  test "both relationship queries include shared clients different plans and empty profiles" do
     assert_equal [ @client.id, @other.id ], @provider.clients.order(:id).pluck(:id)
     assert_equal [ @provider.id, @second.id ], @client.providers.order(:id).pluck(:id)
     assert_equal %w[basic premium], @client.enrollments.order(:plan).pluck(:plan)
@@ -24,6 +24,8 @@ class EnrollmentTest < ActiveSupport::TestCase
   end
 
   test "plans ownership references and duplicates are validated and enforced by the database" do
+    @empty_provider = create_test_account("provider", "Available Provider").provider
+    @client.enrollments.create!(provider: @provider, plan: :basic)
     enrollment = Enrollment.new(client: @client, provider: @empty_provider)
     assert_equal "basic", enrollment.plan
     assert enrollment.valid?
@@ -55,9 +57,12 @@ class EnrollmentTest < ActiveSupport::TestCase
   end
 
   test "removing a relationship preserves client journal and other relationships" do
-    @client.journal_entries.create!(text: "Journal survives relationship removal")
-    journals = @client.journal_entries.order(:id).pluck(:id, :text)
-    @client.enrollments.find_by!(provider: @provider).destroy!
+    second = create_test_account("provider", "Second Enrollment Provider").provider
+    enrollment = @client.enrollments.create!(provider: @provider, plan: :basic)
+    @client.enrollments.create!(provider: second, plan: :premium)
+    entry = @client.journal_entries.create!(text: "Journal survives relationship removal")
+    journals = [ [ entry.id, entry.text ] ]
+    enrollment.destroy!
     assert Client.exists?(@client.id)
     assert Provider.exists?(@provider.id)
     assert_equal journals, @client.journal_entries.order(:id).pluck(:id, :text)

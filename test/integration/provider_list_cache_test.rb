@@ -1,9 +1,11 @@
 require "test_helper"
+require_relative "../support/request_authentication"
 require "redis"
 require_relative "../support/domain_accounts"
 
 class ProviderListCacheTest < ActionDispatch::IntegrationTest
   include DomainAccounts
+  include RequestAuthentication
 
   # Real commits are essential: transactional tests cannot prove after_commit.
   self.use_transactional_tests = false
@@ -115,7 +117,7 @@ class ProviderListCacheTest < ActionDispatch::IntegrationTest
     assert_empty actor.provider.journal_entries
     assert_equal "cache-provider@example.test", actor.email
     assert actor.valid_password?(DomainAccounts::PASSWORD)
-    post user_session_path, params: { user: { email: actor.email, password: DomainAccounts::PASSWORD } }
+    log_in_as(actor)
     assert_redirected_to root_path
     [ "/journal_entries/#{entry.id}", "/clients/#{@client.id}/journal_entries" ].each do |path|
       get path

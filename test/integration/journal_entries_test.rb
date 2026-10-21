@@ -1,26 +1,22 @@
 require "test_helper"
+require_relative "../support/request_authentication"
 require_relative "../support/domain_accounts"
 
 class JournalEntriesTest < ActionDispatch::IntegrationTest
   include DomainAccounts
+  include RequestAuthentication
 
   setup do
     User.destroy_all
     @owner = create_test_account("client", "Journal Owner")
-    @other = create_test_account("client", "Other Journal Owner")
-    @provider = create_test_account("provider", "Journal Reader")
-    [ @owner, @other ].each { |account| account.client.enrollments.create!(provider: @provider.provider) }
     @entry = @owner.client.journal_entries.create!(text: "Owner's original entry")
-    @owner.client.journal_entries.create!(text: "Owner's second entry")
-    @foreign = @other.client.journal_entries.create!(text: "Other client's private entry")
-  end
-
-  def login(user)
-    post user_session_path, params: { user: { email: user.email, password: DomainAccounts::PASSWORD } }
   end
 
   test "owner CRUD persists text only and scoped listing excludes others" do
-    login(@owner)
+    @other = create_test_account("client", "Other Journal Owner")
+    @owner.client.journal_entries.create!(text: "Owner's second entry")
+    @foreign = @other.client.journal_entries.create!(text: "Other client's private entry")
+    log_in_as(@owner)
     get journal_entries_path
     assert_response :success
     assert_select "article", count: 2
@@ -51,7 +47,7 @@ class JournalEntriesTest < ActionDispatch::IntegrationTest
   end
 
   test "blank create and update render validation errors without changing records" do
-    login(@owner)
+    log_in_as(@owner)
     assert_no_difference "JournalEntry.count" do
       post journal_entries_path, params: { journal_entry: { text: " " } }
     end
@@ -64,7 +60,8 @@ class JournalEntriesTest < ActionDispatch::IntegrationTest
   end
 
   test "foreign records and guessed IDs are concealed for direct reads and writes" do
-    login(@other)
+    @other = create_test_account("client", "Other Journal Owner")
+    log_in_as(@other)
     [ @entry.id, -1 ].each do |id|
       get journal_entry_path(id)
       assert_response :not_found
@@ -82,7 +79,9 @@ class JournalEntriesTest < ActionDispatch::IntegrationTest
   end
 
   test "current providers can list and read but cannot create edit update or delete client journals" do
-    login(@provider)
+    @provider = create_test_account("provider", "Journal Reader")
+    @owner.client.enrollments.create!(provider: @provider.provider)
+    log_in_as(@provider)
     get journal_entries_path
     assert_response :success
     get new_journal_entry_path
@@ -119,7 +118,11 @@ class JournalEntriesTest < ActionDispatch::IntegrationTest
   end
 
   test "instance policies independently enforce ownership and role" do
-    provider = @provider
+    @other = create_test_account("client", "Other Journal Owner")
+    provider = create_test_account("provider", "Journal Reader")
+    [ @owner, @other ].each { |account| account.client.enrollments.create!(provider: provider.provider) }
+    second_entry = @owner.client.journal_entries.create!(text: "Owner's second entry")
+    foreign_entry = @other.client.journal_entries.create!(text: "Other client's private entry")
     assert JournalEntryPolicy.new(@owner, @entry).show?
     assert JournalEntryPolicy.new(provider, @entry).show?
     assert_not JournalEntryPolicy.new(@other, @entry).show?
@@ -130,7 +133,7 @@ class JournalEntriesTest < ActionDispatch::IntegrationTest
         assert_not JournalEntryPolicy.new(user, @entry).public_send(action)
       end
     end
-    assert_equal @owner.client.journal_entries.order(:id).pluck(:id), JournalEntryPolicy::Scope.new(@owner, JournalEntry.all).resolve.order(:id).pluck(:id)
-    assert_equal [ @entry.id, @owner.client.journal_entries.order(:id).last.id, @foreign.id ], JournalEntryPolicy::Scope.new(provider, JournalEntry.all).resolve.order(:id).pluck(:id)
+    assert_equal [ @entry.id, second_entry.id ], JournalEntryPolicy::Scope.new(@owner, JournalEntry.all).resolve.order(:id).pluck(:id)
+    assert_equal [ @entry.id, second_entry.id, foreign_entry.id ], JournalEntryPolicy::Scope.new(provider, JournalEntry.all).resolve.order(:id).pluck(:id)
   end
 end

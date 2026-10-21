@@ -1,35 +1,32 @@
 require "test_helper"
+require_relative "../support/request_authentication"
 require_relative "../support/domain_accounts"
 
 class EnrollmentsTest < ActionDispatch::IntegrationTest
   include DomainAccounts
+  include RequestAuthentication
 
   setup do
     User.destroy_all
     @client = create_test_account("client", "Relationship Client")
-    @other = create_test_account("client", "Other Client")
     @provider = create_test_account("provider", "Current Provider")
-    @second = create_test_account("provider", "Second Provider")
     @available = create_test_account("provider", "Available Provider").provider
     @enrollment = @client.client.enrollments.create!(provider: @provider.provider)
-    @client.client.enrollments.create!(provider: @second.provider, plan: :premium)
-    @other.client.enrollments.create!(provider: @provider.provider)
-    @client.client.journal_entries.create!(text: "Retain this entry after removal")
-  end
-
-  def login(user)
-    post user_session_path, params: { user: { email: user.email, password: DomainAccounts::PASSWORD } }
   end
 
   test "client list and directory are scoped and Basic default or Premium add and remove work" do
-    login(@client)
+    @other = create_test_account("client", "Other Client")
+    second = create_test_account("provider", "Second Provider")
+    @client.client.enrollments.create!(provider: second.provider, plan: :premium)
+    entry = @client.client.journal_entries.create!(text: "Retain this entry after removal")
+    log_in_as(@client)
     get enrollments_path
     assert_response :success
     assert_select "tbody tr", count: 2
     assert_select "select[name='enrollment[provider_id]'] option", count: 1
     assert_select "option[selected][value=basic]"
     assert_match "existing and future journal entries", response.body
-    journals = @client.client.journal_entries.order(:id).pluck(:id, :text)
+    journals = [ [ entry.id, entry.text ] ]
     [ nil, "premium" ].each do |plan|
       input = { provider_id: @available.id, client_id: @other.client.id, user_id: @other.id }
       input[:plan] = plan if plan
@@ -50,7 +47,7 @@ class EnrollmentsTest < ActionDispatch::IntegrationTest
   end
 
   test "duplicate invalid plan and unknown provider submissions do not write" do
-    login(@client)
+    log_in_as(@client)
     assert_no_difference "Enrollment.count" do
       post enrollments_path, params: { enrollment: { provider_id: @provider.provider.id, plan: "premium" } }
       assert_response :unprocessable_entity
@@ -64,21 +61,26 @@ class EnrollmentsTest < ActionDispatch::IntegrationTest
   end
 
   test "other clients relationships are concealed and provider mutation requests are forbidden" do
-    login(@other)
+    @other = create_test_account("client", "Other Client")
+    unrelated = create_test_account("client", "Unrelated Client")
+    second = create_test_account("provider", "Second Provider")
+    @client.client.enrollments.create!(provider: second.provider, plan: :premium)
+    @other.client.enrollments.create!(provider: @provider.provider)
+    log_in_as(@other)
     get enrollments_path
     assert_select "tbody tr", count: 1
     assert_no_difference "Enrollment.count" do
       delete enrollment_path(@enrollment)
       assert_response :not_found
     end
-    delete destroy_user_session_path
-    login(@provider)
+    log_out
+    log_in_as(@provider)
     get enrollments_path
     assert_response :success
     assert_select "tbody tr", count: 2
     assert_match @client.name, response.body
     assert_match @other.name, response.body
-    assert_no_match @available.name, response.body
+    assert_no_match unrelated.name, response.body
     assert_select "form[action^='/enrollments']", count: 0
     assert_no_difference "Enrollment.count" do
       post enrollments_path, params: { enrollment: { client_id: @client.client.id, provider_id: @available.id } }
@@ -91,6 +93,7 @@ class EnrollmentsTest < ActionDispatch::IntegrationTest
   end
 
   test "anonymous endpoints require sign in and policies independently check ownership" do
+    @other = create_test_account("client", "Other Client")
     get enrollments_path
     assert_redirected_to new_user_session_path
     assert_no_difference "Enrollment.count" do
