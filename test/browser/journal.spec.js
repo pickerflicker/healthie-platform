@@ -1,15 +1,25 @@
-const { test, expect } = require('@playwright/test');
+const { test, expect } = require('../support/browser');
 
-test('client journal persisted CRUD journey', async ({ page }, testInfo) => {
+test('client journal persisted CRUD journey', async ({ page, scenario }, testInfo) => {
+  scenario({
+    accounts: {
+      "client": {"role": "client", "name": "Quinn Avery"},
+    },
+    entries: [
+      {"client": "client", "text": "First older journal", "created_at": "2026-10-17T08:00:00Z"},
+      {"client": "client", "text": "Second tied journal", "created_at": "2026-10-19T08:00:00Z"},
+      {"client": "client", "text": "Third tied journal", "created_at": "2026-10-19T08:00:00Z"},
+    ],
+  });
   await page.goto('/users/sign_in');
-  await page.getByLabel('Email').fill('client@healthie.example');
-  await page.getByLabel('Password', { exact: true }).fill('Healthie-demo-2026');
+  await page.getByLabel('Email').fill('client@browser.example.test');
+  await page.getByLabel('Password', { exact: true }).fill('Focused-tests-2026');
   await page.getByRole('button', { name: 'Sign in', exact: true }).click();
   await page.getByRole('link', { name: 'My journal', exact: true }).click();
   await expect(page.locator('article')).toHaveCount(3);
-  await expect(page.locator('article').nth(0)).toContainText('An evening stretch');
-  await expect(page.locator('article').nth(1)).toContainText('Prepared lunch');
-  await expect(page.locator('article').nth(2)).toContainText('Walked after breakfast');
+  await expect(page.locator('article').nth(0)).toContainText('Third tied journal');
+  await expect(page.locator('article').nth(1)).toContainText('Second tied journal');
+  await expect(page.locator('article').nth(2)).toContainText('First older journal');
   await page.screenshot({ path: testInfo.outputPath('journal-list.png'), fullPage: true });
   await page.getByRole('link', { name: 'New journal entry' }).click();
   await page.getByLabel('Entry text').fill('QA journal: a walk outside.\nFeeling refreshed.');

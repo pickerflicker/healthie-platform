@@ -3,7 +3,7 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 export PATH="/Applications/Docker.app/Contents/Resources/bin:$PATH"
 case "${1:-up}" in
-  up) docker compose up -d --build --wait postgres redis; docker compose run --rm web bin/rails db:prepare; docker compose run --rm -e RAILS_ENV=test web bin/rails db:prepare; docker compose up -d --build --wait web ;;
+  up) docker compose up -d --build --wait postgres redis; docker compose run --rm web bin/rails db:prepare; docker compose run --rm -e RAILS_ENV=test web bin/rails db:create db:migrate; docker compose up -d --build --wait web ;;
   stop) docker compose stop ;;
   logs) docker compose logs --tail 100 ;;
   status) docker compose ps ;;

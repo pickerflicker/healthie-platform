@@ -1,9 +1,9 @@
-const { test, expect } = require('@playwright/test');
+const { test, expect } = require('../support/browser');
 
 async function signIn(page, login) {
   await page.goto('/users/sign_in');
-  await page.getByLabel('Email').fill(`${login}@healthie.example`);
-  await page.getByLabel('Password', { exact: true }).fill('Healthie-demo-2026');
+  await page.getByLabel('Email').fill(`${login}@browser.example.test`);
+  await page.getByLabel('Password', { exact: true }).fill('Focused-tests-2026');
   await page.getByRole('button', { name: 'Sign in', exact: true }).click();
 }
 
@@ -12,24 +12,43 @@ async function signOut(page) {
   await expect(page).toHaveURL(/\/users\/sign_in$/);
 }
 
-test('seeded provider combined feed, shared client journal, plans and unrelated denials', async ({ page }, testInfo) => {
+test('provider combined feed, shared client journal, plans and unrelated denials', async ({ page, scenario }, testInfo) => {
+  scenario({
+    accounts: {
+      "client": {"role": "client", "name": "Quinn Avery"},
+      "provider": {"role": "provider", "name": "Robin Lane"},
+      "second-provider": {"role": "provider", "name": "Drew Ellis"},
+      "unrelated-client": {"role": "client", "name": "Rowan Hayes"},
+    },
+    enrollments: [
+      {"client": "client", "provider": "provider", "plan": "basic", "created_at": "2026-10-17T09:00:00Z"},
+      {"client": "client", "provider": "second-provider", "plan": "premium", "created_at": "2026-10-19T09:00:00Z"},
+      {"client": "unrelated-client", "provider": "provider", "plan": "premium", "created_at": "2026-10-18T09:00:00Z"},
+    ],
+    entries: [
+      {"client": "client", "text": "First older journal", "created_at": "2026-10-17T08:00:00Z"},
+      {"client": "client", "text": "Second tied journal", "created_at": "2026-10-19T08:00:00Z"},
+      {"client": "client", "text": "Third tied journal", "created_at": "2026-10-19T08:00:00Z"},
+      {"client": "unrelated-client", "text": "Other client journal.", "created_at": "2026-10-20T08:00:00Z"},
+    ],
+  });
   await signIn(page, 'provider');
   await page.getByRole('link', { name: 'Combined journal feed', exact: true }).click();
   await expect(page.locator('article')).toHaveCount(4);
-  for (const [index, text] of ['Tried a new breakfast', 'An evening stretch', 'Prepared lunch', 'Walked after breakfast'].entries()) {
+  for (const [index, text] of ['Other client journal', 'Third tied journal', 'Second tied journal', 'First older journal'].entries()) {
     await expect(page.locator('article').nth(index)).toContainText(text);
   }
   await page.screenshot({ path: testInfo.outputPath('combined-feed.png'), fullPage: true });
   await page.getByRole('link', { name: 'My clients', exact: true }).click();
-  await expect(page.locator('tbody tr').filter({ hasText: 'Alex Rivera' })).toContainText('Basic');
-  await expect(page.locator('tbody tr').filter({ hasText: 'Sam Chen' })).toContainText('Premium');
-  const samJournal = await page.getByRole('link', { name: 'Sam Chen', exact: true }).getAttribute('href');
-  await page.getByRole('link', { name: 'Alex Rivera', exact: true }).click();
-  await expect(page.getByRole('heading', { name: "Alex Rivera's journal", exact: true })).toBeVisible();
+  await expect(page.locator('tbody tr').filter({ hasText: 'Quinn Avery' })).toContainText('Basic');
+  await expect(page.locator('tbody tr').filter({ hasText: 'Rowan Hayes' })).toContainText('Premium');
+  const samJournal = await page.getByRole('link', { name: 'Rowan Hayes', exact: true }).getAttribute('href');
+  await page.getByRole('link', { name: 'Quinn Avery', exact: true }).click();
+  await expect(page.getByRole('heading', { name: "Quinn Avery's journal", exact: true })).toBeVisible();
   await expect(page.locator('article')).toHaveCount(3);
-  await expect(page.locator('article').nth(0)).toContainText('An evening stretch');
-  await expect(page.locator('article').nth(1)).toContainText('Prepared lunch');
-  await expect(page.locator('article').nth(2)).toContainText('Walked after breakfast');
+  await expect(page.locator('article').nth(0)).toContainText('Third tied journal');
+  await expect(page.locator('article').nth(1)).toContainText('Second tied journal');
+  await expect(page.locator('article').nth(2)).toContainText('First older journal');
   await expect(page.getByRole('link', { name: 'New journal entry' })).toHaveCount(0);
   await page.screenshot({ path: testInfo.outputPath('individual-journal.png'), fullPage: true });
   const entryURL = await page.locator('article h2 a').first().getAttribute('href');
@@ -42,7 +61,7 @@ test('seeded provider combined feed, shared client journal, plans and unrelated 
   expect((await page.request.get('/journal_entries/new')).status()).toBe(403);
   expect((await page.request.post('/journal_entries', { form: { 'journal_entry[text]': 'provider forged text' } })).status()).toBe(403);
   await page.reload();
-  await expect(page.locator('main')).toContainText('An evening stretch');
+  await expect(page.locator('main')).toContainText('Third tied journal');
   await page.screenshot({ path: testInfo.outputPath('read-only-entry.png'), fullPage: true });
   await signOut(page);
   await signIn(page, 'second-provider');
@@ -51,7 +70,7 @@ test('seeded provider combined feed, shared client journal, plans and unrelated 
   await expect(page.locator('tbody tr')).toContainText('Premium');
   await page.getByRole('link', { name: 'Combined journal feed', exact: true }).click();
   await expect(page.locator('article')).toHaveCount(3);
-  await expect(page.locator('main')).not.toContainText('Tried a new breakfast');
+  await expect(page.locator('main')).not.toContainText('Other client journal');
   expect((await page.goto(samJournal)).status()).toBe(404);
   await expect(page.getByRole('heading', { name: 'Page not found', exact: true })).toBeVisible();
   await page.screenshot({ path: testInfo.outputPath('unrelated-denied.png'), fullPage: true });
@@ -60,7 +79,22 @@ test('seeded provider combined feed, shared client journal, plans and unrelated 
   await expect(page.getByRole('heading', { name: 'Provider home', exact: true })).toBeVisible();
 });
 
-test('warm provider list refreshes on enrollment changes and journal access is granted then revoked', async ({ page }, testInfo) => {
+test('warm provider list refreshes on enrollment changes and journal access is granted then revoked', async ({ page, scenario }, testInfo) => {
+  scenario({
+    accounts: {
+      "client": {"role": "client", "name": "Quinn Avery"},
+      "current-provider": {"role": "provider", "name": "Robin Lane"},
+      "empty-provider": {"role": "provider", "name": "Avery Blake"},
+    },
+    enrollments: [
+      {"client": "client", "provider": "current-provider", "plan": "basic"},
+    ],
+    entries: [
+      {"client": "client", "text": "First older journal", "created_at": "2026-10-17T08:00:00Z"},
+      {"client": "client", "text": "Second tied journal", "created_at": "2026-10-19T08:00:00Z"},
+      {"client": "client", "text": "Third tied journal", "created_at": "2026-10-19T08:00:00Z"},
+    ],
+  });
   await signIn(page, 'empty-provider');
   await page.getByRole('link', { name: 'Combined journal feed', exact: true }).click();
   await expect(page.getByText('No journal entries yet.')).toBeVisible();
@@ -72,48 +106,51 @@ test('warm provider list refreshes on enrollment changes and journal access is g
   const entryURL = await page.locator('article h2 a').last().getAttribute('href');
   await page.getByRole('link', { name: 'Client home', exact: true }).last().click();
   await page.getByRole('link', { name: 'My providers', exact: true }).click();
-  await expect(page.locator('tbody tr')).toHaveCount(2);
+  await expect(page.locator('tbody tr')).toHaveCount(1);
   await page.reload(); // Exercise the existing cached list before adding a provider.
-  await expect(page.locator('tbody tr')).toHaveCount(2);
-  await expect(page.locator('tbody')).not.toContainText('Casey Park');
-  await page.getByLabel('Provider', { exact: true }).selectOption({ label: 'Casey Park' });
+  await expect(page.locator('tbody tr')).toHaveCount(1);
+  await expect(page.locator('tbody')).not.toContainText('Avery Blake');
+  await expect(page.locator('tbody')).toContainText('Robin Lane');
+  await page.getByLabel('Provider', { exact: true }).selectOption({ label: 'Avery Blake' });
   await page.getByRole('button', { name: 'Add provider', exact: true }).click();
-  await expect(page.locator('tbody tr')).toHaveCount(3);
-  await expect(page.locator('tbody tr').filter({ hasText: 'Casey Park' })).toContainText('Basic');
+  await expect(page.locator('tbody tr')).toHaveCount(2);
+  await expect(page.locator('tbody tr').filter({ hasText: 'Avery Blake' })).toContainText('Basic');
   await page.reload();
-  await expect(page.locator('tbody tr')).toHaveCount(3);
-  await expect(page.locator('tbody')).toContainText('Casey Park');
+  await expect(page.locator('tbody tr')).toHaveCount(2);
+  await expect(page.locator('tbody')).toContainText('Avery Blake');
   await page.screenshot({ path: testInfo.outputPath('provider-added.png'), fullPage: true });
   await signOut(page);
 
   await signIn(page, 'empty-provider');
   await page.getByRole('link', { name: 'My clients', exact: true }).click();
-  await page.getByRole('link', { name: 'Alex Rivera', exact: true }).click();
+  await page.getByRole('link', { name: 'Quinn Avery', exact: true }).click();
   await expect(page).toHaveURL(/\/clients\/\d+\/journal_entries$/);
   const clientJournalURL = page.url();
   await expect(page.locator('article')).toHaveCount(3);
-  await expect(page.locator('article').last()).toContainText('Walked after breakfast');
+  await expect(page.locator('article').last()).toContainText('First older journal');
   await page.screenshot({ path: testInfo.outputPath('historical-access-granted.png'), fullPage: true });
   await page.goto(entryURL);
-  await expect(page.locator('main')).toContainText('Walked after breakfast');
+  await expect(page.locator('main')).toContainText('First older journal');
   await signOut(page);
 
   await signIn(page, 'client');
   await page.getByRole('link', { name: 'My providers', exact: true }).click();
   await expect(page).toHaveURL(/\/enrollments$/);
-  await expect(page.locator('tbody tr')).toHaveCount(3);
+  await expect(page.locator('tbody tr')).toHaveCount(2);
   await page.reload(); // Warm membership immediately before revocation.
-  await expect(page.locator('tbody')).toContainText('Casey Park');
-  await page.getByRole('button', { name: 'Remove Casey Park', exact: true }).click();
-  await expect(page.locator('tbody tr')).toHaveCount(2);
-  await expect(page.locator('tbody')).not.toContainText('Casey Park');
-  await expect(page.getByLabel('Provider', { exact: true })).toContainText('Casey Park');
+  await expect(page.locator('tbody')).toContainText('Avery Blake');
+  await page.getByRole('button', { name: 'Remove Avery Blake', exact: true }).click();
+  await expect(page.locator('tbody tr')).toHaveCount(1);
+  await expect(page.locator('tbody')).not.toContainText('Avery Blake');
+  await expect(page.locator('tbody')).toContainText('Robin Lane');
+  await expect(page.getByLabel('Provider', { exact: true })).toContainText('Avery Blake');
   await page.reload();
-  await expect(page.locator('tbody tr')).toHaveCount(2);
-  await expect(page.locator('tbody')).not.toContainText('Casey Park');
+  await expect(page.locator('tbody tr')).toHaveCount(1);
+  await expect(page.locator('tbody')).not.toContainText('Avery Blake');
+  await expect(page.locator('tbody')).toContainText('Robin Lane');
   await page.screenshot({ path: testInfo.outputPath('provider-removed.png'), fullPage: true });
   await page.goto(entryURL);
-  await expect(page.locator('main')).toContainText('Walked after breakfast');
+  await expect(page.locator('main')).toContainText('First older journal');
   await signOut(page);
 
   await signIn(page, 'empty-provider');
@@ -126,7 +163,7 @@ test('warm provider list refreshes on enrollment changes and journal access is g
   expect((await page.request.delete(entryURL)).status()).toBe(404);
   expect((await page.goto(entryURL)).status()).toBe(404);
   await expect(page.getByRole('heading', { name: 'Page not found', exact: true })).toBeVisible();
-  await expect(page.locator('main')).not.toContainText('Walked after breakfast');
+  await expect(page.locator('main')).not.toContainText('First older journal');
   await expect(page.locator('body')).not.toContainText('ActiveRecord::RecordNotFound');
   await page.screenshot({ path: testInfo.outputPath('direct-access-revoked.png'), fullPage: true });
   await page.getByRole('link', { name: 'Return home', exact: true }).click();

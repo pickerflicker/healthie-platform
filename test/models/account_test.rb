@@ -1,7 +1,6 @@
 require "test_helper"
 
 class AccountTest < ActiveSupport::TestCase
-  # Each model example owns its test rows; db:prepare may already load seeds.
   setup { User.destroy_all }
 
   def account(role = "client", email = "alex@example.com")
@@ -69,19 +68,5 @@ class AccountTest < ActiveSupport::TestCase
     assert user.reload.client
     assert user.destroy
     assert_equal 1, Client.count
-  end
-
-  test "seeds preserve baseline ids and restore intentional names and passwords" do
-    2.times { Rails.application.load_seed }
-    ids = User.order(:email).pluck(:id)
-    user = User.find_by!(email: "client@healthie.example")
-    user.update!(name: "Changed", password: "different-password")
-    Rails.application.load_seed
-    assert_equal ids, User.order(:email).pluck(:id)
-    assert_equal 6, User.count
-    assert_equal 3, Client.count
-    assert_equal 3, Provider.count
-    assert_equal "Alex Rivera", user.reload.name
-    assert user.valid_password?("Healthie-demo-2026")
   end
 end

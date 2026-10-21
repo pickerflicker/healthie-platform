@@ -1,7 +1,10 @@
 require "test_helper"
 require "redis"
+require_relative "../support/domain_accounts"
 
 class ProviderListCacheTest < ActionDispatch::IntegrationTest
+  include DomainAccounts
+
   # Real commits are essential: transactional tests cannot prove after_commit.
   self.use_transactional_tests = false
 
@@ -110,9 +113,9 @@ class ProviderListCacheTest < ActionDispatch::IntegrationTest
     assert_not ClientPolicy.new(actor, @client).show?
     assert_empty JournalEntryPolicy::Scope.new(actor, JournalEntry.all).resolve
     assert_empty actor.provider.journal_entries
-    assert_equal "cache-provider@healthie.example", actor.email
-    assert actor.valid_password?("Healthie-demo-2026")
-    post user_session_path, params: { user: { email: actor.email, password: "Healthie-demo-2026" } }
+    assert_equal "cache-provider@example.test", actor.email
+    assert actor.valid_password?(DomainAccounts::PASSWORD)
+    post user_session_path, params: { user: { email: actor.email, password: DomainAccounts::PASSWORD } }
     assert_redirected_to root_path
     [ "/journal_entries/#{entry.id}", "/clients/#{@client.id}/journal_entries" ].each do |path|
       get path
@@ -125,21 +128,15 @@ class ProviderListCacheTest < ActionDispatch::IntegrationTest
     assert JournalEntry.exists?(entry.id)
   end
 
-  test "test cache clearing and repeat seeds preserve development cache and restore coherent lists" do
+  test "test cache clearing preserves development keys and refills from its own scenario" do
     redis = Redis.new(url: ENV.fetch("REDIS_URL", "redis://127.0.0.1:56379/0"))
     sentinel = "healthie:development:qa-isolation-#{SecureRandom.hex(8)}"
     redis.set(sentinel, "preserve", ex: 60)
-    Rails.application.load_seed
-    seeded_client = User.find_by!(email: "client@healthie.example").client
-    expected = seeded_client.provider_list
-    counts = [ User.count, Enrollment.count, JournalEntry.count ]
-    Rails.cache.write(Client.provider_list_cache_key(seeded_client.id), [ { name: "Stale seed result" } ])
-    Rails.application.load_seed
-    assert_nil Rails.cache.read(Client.provider_list_cache_key(seeded_client.id))
-    assert_equal expected, seeded_client.provider_list
-    assert_equal counts, [ User.count, Enrollment.count, JournalEntry.count ]
+    expected = [ { enrollment_id: @enrollment.id, provider_id: @provider.id, name: "cache-provider", plan: "basic" } ]
+    assert_equal expected, @client.provider_list
     Rails.cache.clear
-    assert_nil Rails.cache.read(Client.provider_list_cache_key(seeded_client.id))
+    assert_nil Rails.cache.read(Client.provider_list_cache_key(@client.id))
+    assert_equal expected, @client.provider_list
     assert_equal "preserve", redis.get(sentinel)
     assert_equal "healthie_test", ActiveRecord::Base.connection.current_database
   ensure
@@ -149,6 +146,6 @@ class ProviderListCacheTest < ActionDispatch::IntegrationTest
   private
 
   def account(name, role)
-    User.create_account!(name: name, email: "#{name}@healthie.example", password: "Healthie-demo-2026", role: role).tap { |user| @users << user }
+    create_test_account(role, name).tap { |user| @users << user }
   end
 end

@@ -38,11 +38,10 @@ mise exec -- bin/bootstrap
 bin/stack up
 mise exec -- bin/rails db:seed
 mise exec -- bin/check
-RAILS_ENV=test mise exec -- bin/rails db:seed
 mise exec -- bin/acceptance
 ```
 
-Review preview: http://127.0.0.1:3000. `bin/preview` binds the shared web service to this checkout. `bin/stack stop` preserves database storage. Tests use `healthie_test` and the `healthie:test` Redis namespace; development browsing data is retained.
+Review preview: http://127.0.0.1:3000. `bin/preview` binds the shared web service to this checkout. `bin/stack stop` preserves database storage. Tests use `healthie_test` and the `healthie:test` Redis namespace; development browsing data is retained. All automated tests create their own accounts and scenarios; none load or depend on `db/seeds.rb`. Browser fixtures reset only the disposable test database records/cache before and after each test, including retries and individual-file runs.
 
 Sign in with `provider@healthie.example` (Morgan Patel) or `client@healthie.example` (Alex Rivera). All seeded accounts use the local fixture password `Healthie-demo-2026`. Additional accounts are `second-provider@healthie.example` (Taylor Reed), `empty-provider@healthie.example` (Casey Park), `unrelated-client@healthie.example` (Sam Chen) and `empty-client@healthie.example` (Jamie Brooks). Alex has Basic with Morgan and Premium with Taylor; Sam has Premium with Morgan. Jamie and Casey start without relationships. Seeds restore intentional identities/passwords and add missing baseline relationships without duplicating records or removing unrelated data. No signup or password recovery is exposed.
 
