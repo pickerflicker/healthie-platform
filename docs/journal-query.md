@@ -9,4 +9,8 @@ client.journal_entries.order(created_at: :desc, id: :desc)
 
 The controller starts with `policy_scope(JournalEntry)` and applies the same explicit ordering. Editing text leaves `created_at` unchanged. The composite `(client_id, created_at, id)` index supports this per-client filter/order; it replaces a standalone client index. Journals are queried directly, without Redis caching.
 
-Seeds include three entries for Alex across two dates, two sharing a creation timestamp, one unrelated client's entry and Jamie's empty journal. All demo accounts use the documented local demo password. Additional client logins are `unrelated-client@healthie.example` and `empty-client@healthie.example`. Provider journal access is deferred until the enrollment/read feature.
+The [fictional manual demo](../README.md#fictional-manual-demo) now includes 50
+Alex entries over a fixed 90-day baseline, preserving the three original notes
+and their timestamp tie. Morgan's feed includes several fictional clients; Sam's
+journal is denied to Taylor, while Luna's unassigned history is denied to Morgan.
+Jamie remains empty. These manual seeds are independent of automated test data.

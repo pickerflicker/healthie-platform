@@ -33,26 +33,50 @@ client.enrollments.preload(provider: :user).order(created_at: :desc, id: :desc).
 
 ## Intentional dataset
 
-All local fixture logins use `Healthie-demo-2026`; append `@healthie.example`
-to the login below. Seeds add missing baseline records without removing other
-browsing data. Counts below describe a clean seed baseline.
+See the [README login/scenario table](../README.md#fictional-manual-demo) for
+accounts, credentials, memorable stories, precise rerun restoration rules and the
+Docker seed command. These are fictional manual demo fixtures, independent of
+regular model/request/browser test scenarios.
 
-| Login | Profile and expected query results |
+A clean baseline implements exactly **30 providers, 100 clients, 200 enrollments
+and 1,000 journals**. The fixed inclusive 90-day window is **July 23–October 20,
+2026 UTC**, with endpoints `2026-07-23T08:00:00Z` and `2026-10-20T08:00:00Z`.
+Existing development data and edits can change these totals/distributions.
+
+| Distribution | Clean baseline |
 | --- | --- |
-| provider | Morgan Patel: Sam Chen (Premium), Alex Rivera (Basic); four journal entries |
-| second-provider | Taylor Reed: Alex (Premium); Alex's three entries, excluding Sam |
-| empty-provider | Casey Park: no clients or feed entries |
-| client | Alex Rivera: Taylor then Morgan; three entries, with two tied creation times |
-| unrelated-client | Sam Chen: Morgan; one entry, inaccessible to Taylor |
-| empty-client | Jamie Brooks: no providers or entries |
+| Enrollment plans | 103 Basic / 97 Premium |
+| Provider credentials | 9 RDN+LD / 4 RDN+LD+CDCES / 7 CNS / 10 MD; no blanks |
+| Provider client counts | Morgan 38; Taylor 9; Casey, Poppy and Wren 0; Cedar 1; Pearl 2; remaining 23 providers 4–10 each |
+| Client provider counts | 7 unassigned / 10 with one / 70 with two / 6 with three / 6 with four / Alex with eight |
+| Primary provider | Morgan: 38 clients, 503 combined entries, both plans, Quinn with no entries |
+| Primary client | Alex: 8 providers, 50 entries, 22 available providers; Basic Morgan / Premium Taylor |
+| Journal volumes | Alex 50, Sam 12, Jamie 0, Sherlock 45, Frodo 40, Bilbo 35, Arthur 30, Dorothy 25, Picard 40, Quinn 0, Luna 15, Pip 2; 87 others with 8, Marlow Kingsley with 10 |
 
-Morgan's combined feed is: “Tried a new breakfast recipe.” (Sam, October 20),
-“An evening stretch helped me unwind.” (Alex, October 19, higher ID),
-“Prepared lunch for tomorrow.” (Alex, same timestamp, lower ID), then
-“Walked after breakfast and felt energized.” (Alex, October 17). Alex's journal
-has the last three in that order. Shared Alex appears once per provider feed;
-unique `(provider_id, client_id)` enrollments prevent duplicate join rows.
-The tests also exercise tied timestamps across different clients.
+Morgan and Taylor share Alex and Sherlock. Taylor cannot access Sam; Morgan
+cannot access Luna's unassigned history. Credentials belong to providers, while
+plans belong to each enrollment. Shared clients can have different plans with
+different providers. Casey/Jamie remain deliberate empty accounts, and the last
+five invented clients plus Luna and Jamie have no providers.
+
+Ordering is explicit and does not follow account age. On a clean load Morgan's
+newest two enrollments are Frodo then Sherlock, tied at October 20 10:00 UTC.
+Alex's newest two are Meredith Grey then Gregory House, tied at 11:00 UTC.
+The larger enrollment ID wins each tie; new account/profile dates precede the
+relationships by months. Existing legacy record timestamps are preserved.
+Alex retains the original October 19 18:00 notes (stretch, then lunch by ID),
+plus newer October 20 08:00 ties. Morgan's feed has exact ties across clients
+as well. Read actual IDs from `bin/queries`, since existing/manual records mean
+there are no portable hard-coded IDs. Unchanged reseeding preserves these IDs,
+timestamps and query orders.
+
+The opt-in `script/demo_seed_smoke.rb` validates the seed feature only, refuses
+nonlocal/non-test/nonempty targets, and compares every database attribute plus
+the four ordered ID lists across reruns. It additionally checks manual sentinel
+records/edits, missing-state restoration and real Redis namespace isolation.
+It is intentionally absent from regular application/CI test fixtures and checks.
+Observed local native run: 2.30 seconds clean, 0.68 seconds unchanged rerun
+(illustrative observations, not a benchmark gate).
 
 ## Schema and index tradeoffs
 
@@ -71,7 +95,7 @@ The tests also exercise tied timestamps across different clients.
   and a backward scan for that client's `created_at DESC, id DESC`. Across several
   clients, rows grouped by client do **not** guarantee the provider feed's global
   order; the explicit `ORDER BY` remains required and PostgreSQL may sort after
-  joining. No additional index is justified by a tiny seed dataset alone.
+  joining. No additional index is justified by a seed-scale dataset alone.
 - Both journal listing queries and provider-client lists remain uncached in Redis.
   ActiveRecord's ordinary request-local query cache is separate from persistent
   application caching. The only Redis result cache is the per-client provider
@@ -84,14 +108,14 @@ after-commit invalidation. Enrollment and User callbacks identify affected
 clients; `client.provider_list` remains the display read entry point.
 
 `client.provider_list` returns serializable hashes with enrollment/provider IDs,
-provider name and plan, ordered by enrollment creation time then ID, both descending. The client **My providers** page
+provider name, credentials and plan, ordered by enrollment creation time then ID, both descending. The client **My providers** page
 uses it after Pundit scopes the client; `client.providers` remains a raw
 ActiveRecord association. The provider directory dropdown is also queried live.
 
-Redis keys are `healthie:<environment>:clients/<client ID>/provider-list/v1`, with
+Redis keys are `healthie:<environment>:clients/<client ID>/provider-list/v2`, with
 an explicit one-minute expiry on each provider-list write. The first read fetches
 the enrollment result with a joined scalar projection; subsequent reads reuse it. Enrollment commits (including plan updates) delete
-affected client keys. Provider name commits delete keys for all enrolled clients.
+affected client keys. Provider name and credential commits delete keys for all enrolled clients.
 Email is not cached. The list uses ordinary `Rails.cache.fetch`; the application
 reads it outside write transactions. Rolled-back relationship/name writes do not
 invalidate or publish changed membership. Calling this display query inside a
@@ -131,7 +155,7 @@ mise exec -- bin/rails runner script/interview_queries.rb
 
 The script prints each relation's SQL, result IDs and PostgreSQL `EXPLAIN` plan.
 Compare results with the baseline above and inspect join access paths and sort
-nodes. A sequential scan or explicit sort can be reasonable for these few rows;
+nodes. A sequential scan or explicit sort can be reasonable at this seed scale;
 planner choices depend on data, statistics and PostgreSQL version. `EXPLAIN`
 shows estimates, not measured latency or production throughput. Do not force
 index scans or infer large-dataset performance from this demonstration. Pagination,
