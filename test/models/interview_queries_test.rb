@@ -7,13 +7,13 @@ class InterviewQueriesTest < ActiveSupport::TestCase
   setup do
     User.destroy_all
     @provider = create_test_account("provider", "Primary Provider").provider
-    @second_provider = create_test_account("provider", "Second Provider").provider
+    second_provider = create_test_account("provider", "Second Provider").provider
     @client = create_test_account("client", "Primary Client").client
     @other = create_test_account("client", "Other Client").client
     @empty_client = create_test_account("client", "Unrelated Client").client
     @empty_provider = create_test_account("provider", "Unrelated Provider").provider
     @client.enrollments.create!(provider: @provider, created_at: Time.utc(2026, 10, 17))
-    @client.enrollments.create!(provider: @second_provider, created_at: Time.utc(2026, 10, 18))
+    @client.enrollments.create!(provider: second_provider, created_at: Time.utc(2026, 10, 18))
     @other.enrollments.create!(provider: @provider, created_at: Time.utc(2026, 10, 19))
     @earlier = @client.journal_entries.create!(text: "Earlier entry", created_at: Time.utc(2026, 10, 17))
     @first_tied = @client.journal_entries.create!(text: "First tied entry", created_at: Time.utc(2026, 10, 19))

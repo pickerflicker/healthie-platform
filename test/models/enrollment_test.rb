@@ -10,23 +10,23 @@ class EnrollmentTest < ActiveSupport::TestCase
   end
 
   test "both relationship queries include shared clients different plans and empty profiles" do
-    @other = create_test_account("client", "Other Enrollment Client").client
-    @second = create_test_account("provider", "Second Enrollment Provider").provider
-    @empty_provider = create_test_account("provider", "Available Provider").provider
+    other = create_test_account("client", "Other Enrollment Client").client
+    second = create_test_account("provider", "Second Enrollment Provider").provider
+    empty_provider = create_test_account("provider", "Available Provider").provider
     @client.enrollments.create!(provider: @provider, plan: :basic)
-    @client.enrollments.create!(provider: @second, plan: :premium)
-    @other.enrollments.create!(provider: @provider, plan: :premium)
-    assert_equal [ @client.id, @other.id ], @provider.clients.order(:id).pluck(:id)
-    assert_equal [ @provider.id, @second.id ], @client.providers.order(:id).pluck(:id)
+    @client.enrollments.create!(provider: second, plan: :premium)
+    other.enrollments.create!(provider: @provider, plan: :premium)
+    assert_equal [ @client.id, other.id ], @provider.clients.order(:id).pluck(:id)
+    assert_equal [ @provider.id, second.id ], @client.providers.order(:id).pluck(:id)
     assert_equal %w[basic premium], @client.enrollments.order(:plan).pluck(:plan)
-    assert_empty @empty_provider.clients
+    assert_empty empty_provider.clients
     assert_empty create_test_account("client", "Empty Enrollment Client").client.providers
   end
 
   test "plans ownership references and duplicates are validated and enforced by the database" do
-    @empty_provider = create_test_account("provider", "Available Provider").provider
+    empty_provider = create_test_account("provider", "Available Provider").provider
     @client.enrollments.create!(provider: @provider, plan: :basic)
-    enrollment = Enrollment.new(client: @client, provider: @empty_provider)
+    enrollment = Enrollment.new(client: @client, provider: empty_provider)
     assert_equal "basic", enrollment.plan
     assert enrollment.valid?
     [ nil, "", "gold" ].each do |plan|
@@ -36,7 +36,7 @@ class EnrollmentTest < ActiveSupport::TestCase
     assert_not Enrollment.new(client: @client, provider: @provider).valid?
     assert_not Enrollment.new(client: @client).valid?
     assert_not Enrollment.new(provider: @provider).valid?
-    attributes = { client_id: @client.id, provider_id: @empty_provider.id }
+    attributes = { client_id: @client.id, provider_id: empty_provider.id }
     [ [ { plan: "gold" }, ActiveRecord::StatementInvalid ], [ { plan: nil }, ActiveRecord::NotNullViolation ],
       [ { client_id: -1 }, ActiveRecord::InvalidForeignKey ], [ { provider_id: -1 }, ActiveRecord::InvalidForeignKey ],
       [ { client_id: nil }, ActiveRecord::NotNullViolation ], [ { provider_id: nil }, ActiveRecord::NotNullViolation ] ].each do |changes, error|

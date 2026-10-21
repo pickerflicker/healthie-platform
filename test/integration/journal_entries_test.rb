@@ -13,18 +13,18 @@ class JournalEntriesTest < ActionDispatch::IntegrationTest
   end
 
   test "owner CRUD persists text only and scoped listing excludes others" do
-    @other = create_test_account("client", "Other Journal Owner")
+    other = create_test_account("client", "Other Journal Owner")
     @owner.client.journal_entries.create!(text: "Owner's second entry")
-    @foreign = @other.client.journal_entries.create!(text: "Other client's private entry")
+    foreign = other.client.journal_entries.create!(text: "Other client's private entry")
     log_in_as(@owner)
     get journal_entries_path
     assert_response :success
     assert_select "article", count: 2
-    assert_no_match @foreign.text, response.body
+    assert_no_match foreign.text, response.body
     get new_journal_entry_path
     assert_response :success
     assert_difference "JournalEntry.count", 1 do
-      post journal_entries_path, params: { journal_entry: { text: "New <script>note</script>\nsecond line", client_id: @other.client.id, created_at: "2000-01-01" } }
+      post journal_entries_path, params: { journal_entry: { text: "New <script>note</script>\nsecond line", client_id: other.client.id, created_at: "2000-01-01" } }
     end
     entry = JournalEntry.order(:id).last
     assert_equal @owner.client.id, entry.client_id
@@ -35,7 +35,7 @@ class JournalEntriesTest < ActionDispatch::IntegrationTest
     get edit_journal_entry_path(entry)
     assert_response :success
     created = entry.created_at
-    patch journal_entry_path(entry), params: { journal_entry: { text: "Edited", client_id: @other.client.id, created_at: "2000-01-01" } }
+    patch journal_entry_path(entry), params: { journal_entry: { text: "Edited", client_id: other.client.id, created_at: "2000-01-01" } }
     assert_response :see_other
     assert_equal "Edited", entry.reload.text
     assert_equal @owner.client.id, entry.client_id
@@ -60,15 +60,15 @@ class JournalEntriesTest < ActionDispatch::IntegrationTest
   end
 
   test "foreign records and guessed IDs are concealed for direct reads and writes" do
-    @other = create_test_account("client", "Other Journal Owner")
-    log_in_as(@other)
+    other = create_test_account("client", "Other Journal Owner")
+    log_in_as(other)
     [ @entry.id, -1 ].each do |id|
       get journal_entry_path(id)
       assert_response :not_found
       assert_no_match @entry.text, response.body
       get edit_journal_entry_path(id)
       assert_response :not_found
-      patch journal_entry_path(id), params: { journal_entry: { text: "stolen", client_id: @other.client.id } }
+      patch journal_entry_path(id), params: { journal_entry: { text: "stolen", client_id: other.client.id } }
       assert_response :not_found
       assert_no_difference "JournalEntry.count" do
         delete journal_entry_path(id)
@@ -79,9 +79,9 @@ class JournalEntriesTest < ActionDispatch::IntegrationTest
   end
 
   test "current providers can list and read but cannot create edit update or delete client journals" do
-    @provider = create_test_account("provider", "Journal Reader")
-    @owner.client.enrollments.create!(provider: @provider.provider)
-    log_in_as(@provider)
+    provider = create_test_account("provider", "Journal Reader")
+    @owner.client.enrollments.create!(provider: provider.provider)
+    log_in_as(provider)
     get journal_entries_path
     assert_response :success
     get new_journal_entry_path
@@ -118,18 +118,18 @@ class JournalEntriesTest < ActionDispatch::IntegrationTest
   end
 
   test "instance policies independently enforce ownership and role" do
-    @other = create_test_account("client", "Other Journal Owner")
+    other = create_test_account("client", "Other Journal Owner")
     provider = create_test_account("provider", "Journal Reader")
-    [ @owner, @other ].each { |account| account.client.enrollments.create!(provider: provider.provider) }
+    [ @owner, other ].each { |account| account.client.enrollments.create!(provider: provider.provider) }
     second_entry = @owner.client.journal_entries.create!(text: "Owner's second entry")
-    foreign_entry = @other.client.journal_entries.create!(text: "Other client's private entry")
+    foreign_entry = other.client.journal_entries.create!(text: "Other client's private entry")
     assert JournalEntryPolicy.new(@owner, @entry).show?
     assert JournalEntryPolicy.new(provider, @entry).show?
-    assert_not JournalEntryPolicy.new(@other, @entry).show?
+    assert_not JournalEntryPolicy.new(other, @entry).show?
     assert_not JournalEntryPolicy.new(nil, @entry).show?
     %i[edit? update? destroy? create? new?].each do |action|
       assert JournalEntryPolicy.new(@owner, @entry).public_send(action)
-      [ @other, provider, nil ].each do |user|
+      [ other, provider, nil ].each do |user|
         assert_not JournalEntryPolicy.new(user, @entry).public_send(action)
       end
     end
