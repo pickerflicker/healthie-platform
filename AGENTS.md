@@ -10,6 +10,12 @@ Steven wants ordering visible in each query: keep associations free of presentat
 
 For scalar display/cache payloads, Steven prefers a SQL projection: select needed columns with `pluck`, join related tables when needed, then map values into hashes. Use model objects with query-local preloading when callers need model behavior or association traversal. Preserve a working `joins + pluck` query during an ordering change; a generic eager-loading/N+1 requirement does not justify replacing it with `preload + map` over full records. Self-review and QA verify the chosen shape avoids per-row queries.
 
+## Dependency versions
+
+Before adding a dependency or choosing a version constraint, check the official package registry and upstream releases/migration notes for the latest stable release and compatibility with this project's framework, runtime and infrastructure. This applies to gems, JavaScript packages, GitHub Actions and container images. Prefer the latest stable compatible version; verify current releases rather than relying on remembered versions or copied examples.
+
+Record the checked date, source links, selected version and relevant compatibility requirements in the PR description. If selecting an older major than the latest stable major, explain the concrete compatibility or migration constraint and what would allow an upgrade. If the reason is a deliberate tradeoff rather than a hard constraint, state that tradeoff explicitly. Set dependency constraints to reflect the researched choice. Developer self-review and the existing independent QA review verify this evidence; keep unrelated upgrades outside the change's scope.
+
 ## Test data
 
 Every automated test owns its setup or explicitly selected test fixtures, including browser journeys and cache/lifecycle checks. Never load `db/seeds.rb`, look up demo accounts, or assume demo counts/text/order in automated tests. Seeds are for manual development/staging/demo browsing. Prepare test databases with schema/migrations without seeding; keep destructive setup scoped to the local `healthie_test` database and `healthie:test` cache namespace.

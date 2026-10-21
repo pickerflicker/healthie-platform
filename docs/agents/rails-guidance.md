@@ -15,6 +15,7 @@ The topic files are explicit reference reads for these branches; they need not b
 
 ## Healthie overrides
 
+- **Research dependency versions before selecting them.** Follow the canonical [dependency-version policy](../../AGENTS.md#dependency-versions) when adding dependencies or choosing version constraints, including its release checks, compatibility evidence and explanation for older-major choices.
 - **Pundit remains the authorization system.** Keep policies, `policy_scope`, action-specific `authorize` calls and verification hooks under [authorization.md](authorization.md). Scoped lookups and ownership checks support that system. The upstream model-predicate/controller-guard approach does not replace or duplicate Pundit.
 - **Devise remains the authentication system.** Keep `current_user` and the accepted User role plus Client/Provider profiles. Retain the seeded email/password sign-in flow. Upstream magic-link authentication, Identity/Session/account models and `Current` conventions are references for other architectures, not a migration plan for this app.
 - **Redis remains the cache system.** Preserve the accepted per-client provider-list cache, invalidation after committed changes and development/test isolation. Database-backed Solid Cache/Queue/Cable examples do not authorize replacing Redis or adding services.
