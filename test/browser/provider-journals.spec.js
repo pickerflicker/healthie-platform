@@ -60,7 +60,7 @@ test('seeded provider combined feed, shared client journal, plans and unrelated 
   await expect(page.getByRole('heading', { name: 'Provider home', exact: true })).toBeVisible();
 });
 
-test('normal client/provider sign-ins grant historical journal access then revoke direct and feed reads', async ({ page }, testInfo) => {
+test('warm provider list refreshes on enrollment changes and journal access is granted then revoked', async ({ page }, testInfo) => {
   await signIn(page, 'empty-provider');
   await page.getByRole('link', { name: 'Combined journal feed', exact: true }).click();
   await expect(page.getByText('No journal entries yet.')).toBeVisible();
@@ -73,9 +73,16 @@ test('normal client/provider sign-ins grant historical journal access then revok
   await page.getByRole('link', { name: 'Client home', exact: true }).last().click();
   await page.getByRole('link', { name: 'My providers', exact: true }).click();
   await expect(page.locator('tbody tr')).toHaveCount(2);
+  await page.reload(); // Exercise the existing cached list before adding a provider.
+  await expect(page.locator('tbody tr')).toHaveCount(2);
+  await expect(page.locator('tbody')).not.toContainText('Casey Park');
   await page.getByLabel('Provider', { exact: true }).selectOption({ label: 'Casey Park' });
   await page.getByRole('button', { name: 'Add provider', exact: true }).click();
   await expect(page.locator('tbody tr')).toHaveCount(3);
+  await expect(page.locator('tbody tr').filter({ hasText: 'Casey Park' })).toContainText('Basic');
+  await page.reload();
+  await expect(page.locator('tbody tr')).toHaveCount(3);
+  await expect(page.locator('tbody')).toContainText('Casey Park');
   await page.screenshot({ path: testInfo.outputPath('provider-added.png'), fullPage: true });
   await signOut(page);
 
@@ -93,8 +100,17 @@ test('normal client/provider sign-ins grant historical journal access then revok
 
   await signIn(page, 'client');
   await page.getByRole('link', { name: 'My providers', exact: true }).click();
+  await expect(page).toHaveURL(/\/enrollments$/);
+  await expect(page.locator('tbody tr')).toHaveCount(3);
+  await page.reload(); // Warm membership immediately before revocation.
+  await expect(page.locator('tbody')).toContainText('Casey Park');
   await page.getByRole('button', { name: 'Remove Casey Park', exact: true }).click();
   await expect(page.locator('tbody tr')).toHaveCount(2);
+  await expect(page.locator('tbody')).not.toContainText('Casey Park');
+  await expect(page.getByLabel('Provider', { exact: true })).toContainText('Casey Park');
+  await page.reload();
+  await expect(page.locator('tbody tr')).toHaveCount(2);
+  await expect(page.locator('tbody')).not.toContainText('Casey Park');
   await page.screenshot({ path: testInfo.outputPath('provider-removed.png'), fullPage: true });
   await page.goto(entryURL);
   await expect(page.locator('main')).toContainText('Walked after breakfast');
