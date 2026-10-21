@@ -10,4 +10,4 @@ mkdir -p "$runtime"
 rsync -a "$source_dir/" "$runtime/"
 python3 script/symphony/install_gate.py "$runtime"
 (cd "$runtime" && mise trust && mise install && mise exec -- mix compile --force && mise exec -- mix escript.build)
-bin/check-agents
+SYMPHONY_RUNTIME_DIR="$runtime" bin/check-agents
