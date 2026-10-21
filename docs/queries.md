@@ -1,5 +1,17 @@
 # Session 1 queries and walkthrough
 
+With the Compose web service running, run all four queries without native gems:
+
+```sh
+bin/queries
+```
+
+This checkout's shortcut prints SQL, current result IDs and PostgreSQL `EXPLAIN`
+plans. From another directory, use `~/dev/healthie-platform/bin/queries`.
+Results reflect current development data, including UI edits.
+
+For the native commands below, first source `script/native_bundle_env`.
+
 Seed the local development database using `mise exec -- bin/rails db:seed`.
 Open `mise exec -- bin/rails console` and run all four employer-required queries:
 
@@ -33,7 +45,7 @@ client.enrollments.preload(provider: :user).order(created_at: :desc, id: :desc).
 
 ## Intentional dataset
 
-See the [README login/scenario table](../README.md#fictional-manual-demo) for
+See the [demo login/scenario table](demo.md) for
 accounts, credentials, memorable stories, precise rerun restoration rules and the
 Docker seed command. These are fictional manual demo fixtures, independent of
 regular model/request/browser test scenarios.

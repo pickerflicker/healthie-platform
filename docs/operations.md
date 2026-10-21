@@ -38,7 +38,7 @@ When a managed worker cannot launch Chromium directly, the operator runs `bin/qa
 
 ## Validation coverage
 
-The [README check table](../README.md#check-commands) defines the public commands and GitHub/local split. Run `bin/check-all --base origin/main` through mise after sourcing `script/native_bundle_env` to run delivery, Rails, browser and local agent suites sequentially. It exits nonzero on a failed suite or missing prerequisite and never silently substitutes a smaller run. `bin/check-delivery` is shared with GitHub CI; its optional `--base COMMIT` selects committed changes, otherwise the artifact guard checks staged files.
+The [check commands](#check-commands) below define the public commands and GitHub/local split. Run `bin/check-all --base origin/main` through mise after sourcing `script/native_bundle_env` to run delivery, Rails, browser and local agent suites sequentially. It exits nonzero on a failed suite or missing prerequisite and never silently substitutes a smaller run. `bin/check-delivery` is shared with GitHub CI; its optional `--base COMMIT` selects committed changes, otherwise the artifact guard checks staged files.
 
 `bin/check-agents` runs 38 deterministic local infrastructure tests: 4 retry-guard, 9 dispatch-gate, 24 launcher/permission-bridge and 1 retry-protocol test. It also validates the nested Ruby/Node toolchain. The protocol case supplies its own temporary workflow and fake agent process. These checks make no live tracker/model calls and start no scheduler. `bin/check-symphony` remains the narrower 37-test gate/launcher command; use `bin/check-agents` for complete agent coverage.
 
@@ -87,3 +87,38 @@ For `turn/start` and model-free `command/exec`, the bridge requires the selected
 ## Compiled UI assets
 
 [Frontend build documentation](frontend.md) owns Tailwind/daisyUI commands and container integration. Use `mise exec -- bin/dev` for native Rails plus CSS watching, or `mise exec -- bin/preview` to compile assets and rebind the shared Compose preview. CSS also builds before checks/acceptance and asset precompile. When running Docker Buildx from a managed worker, set `BUILDX_CONFIG=$PWD/tmp/docker-buildx` to keep activity state in the writable workspace rather than the protected home directory. This does not change scheduler ownership or service storage.
+
+## Native development setup
+
+After the README setup has started the Compose stack, install native gems and
+prepare local checks:
+
+```sh
+source script/native_bundle_env
+mise exec -- bin/bootstrap
+mise exec -- bin/check
+mise exec -- npx playwright install chromium
+mise exec -- bin/acceptance
+```
+
+Source `script/native_bundle_env` in each new shell before native Bundler or Rails
+commands. PostgreSQL and Redis must be running before `bin/bootstrap`, because it
+prepares databases. Use `mise exec -- bin/dev` for native Rails with CSS watching;
+stop the Compose web service first (`docker compose stop web`) to free port 3000
+while retaining PostgreSQL and Redis.
+
+## Check commands
+
+| Command | Coverage | GitHub CI |
+| --- | --- | --- |
+| `bin/check` | Rails tests, Ruby style and code loading | Yes |
+| `bin/acceptance` | Headless browser scenarios | Yes |
+| `bin/check-delivery --base origin/main` | Delivery regression tests and QA artifact guard | Yes, with the PR/push base |
+| `bin/check-agents` | 38 local agent-infrastructure tests plus nested toolchain validation | Local only |
+| `bin/check-all --base origin/main` | All four suites above, sequentially | Local only |
+
+For a complete local run, source `script/native_bundle_env`, then run `mise exec -- bin/check-all --base origin/main`. PostgreSQL/Redis and browser dependencies must be ready; agent checks also require the prepared Symphony runtime documented in [validation coverage](#validation-coverage). Missing prerequisites fail the command rather than skip a suite. Without `--base`, the delivery guard checks staged files instead of the committed branch diff.
+
+Application-only PRs require the ordinary GitHub CI suites. Changes to agent launch, permissions, dispatch, retry handling or their test/check tooling additionally require a passing local `bin/check-agents` result recorded in the PR. Report suites by name; use “all checks passed” only for a successful `bin/check-all` run. Live Codex probes and optional security audits are separate, explicitly requested checks. The generated `bin/ci` audit runner is neither the GitHub workflow nor the full local command.
+
+Browser tests share only small `signIn`/`signOut` helpers in `test/support/browser.js`. Each case declares its own records and expectations; authentication failure/tampering steps remain inline in the authentication test.

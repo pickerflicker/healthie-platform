@@ -9,7 +9,7 @@ client.journal_entries.order(created_at: :desc, id: :desc)
 
 The controller starts with `policy_scope(JournalEntry)` and applies the same explicit ordering. Editing text leaves `created_at` unchanged. The composite `(client_id, created_at, id)` index supports this per-client filter/order; it replaces a standalone client index. Journals are queried directly, without Redis caching.
 
-The [fictional manual demo](../README.md#fictional-manual-demo) now includes 50
+The [fictional manual demo](demo.md) now includes 50
 Alex entries over a fixed 90-day baseline, preserving the three original notes
 and their timestamp tie. Morgan's feed includes several fictional clients; Sam's
 journal is denied to Taylor, while Luna's unassigned history is denied to Morgan.
