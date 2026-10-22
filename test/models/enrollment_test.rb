@@ -60,7 +60,7 @@ class EnrollmentTest < ActiveSupport::TestCase
     second = create_test_account("provider", "Second Enrollment Provider").provider
     enrollment = @client.enrollments.create!(provider: @provider, plan: :basic)
     @client.enrollments.create!(provider: second, plan: :premium)
-    entry = @client.journal_entries.create!(text: "Journal survives relationship removal")
+    entry = @client.journal_entries.create!(provider: @provider, text: "Journal survives relationship removal")
     journals = [ [ entry.id, entry.text ] ]
     enrollment.destroy!
     assert Client.exists?(@client.id)

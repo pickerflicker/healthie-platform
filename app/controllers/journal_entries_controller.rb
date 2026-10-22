@@ -22,7 +22,11 @@ class JournalEntriesController < ApplicationController
 
   def create
     build_journal_entry
-    @journal_entry.assign_attributes(journal_entry_params)
+    @journal_entry.assign_attributes(params.expect(journal_entry: [ :text, :provider_id ]))
+    unless params[:journal_entry].key?(:provider_id)
+      provider_ids = current_user.client.enrollments.limit(2).pluck(:provider_id)
+      @journal_entry.provider_id = provider_ids.first if provider_ids.one?
+    end
     if @journal_entry.save
       redirect_to @journal_entry, notice: "Journal entry created."
     else

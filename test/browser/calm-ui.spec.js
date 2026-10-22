@@ -10,7 +10,7 @@ test('confirmations cancel, dismiss, restore focus and mutate only the selected 
   scenario({ accounts, enrollments: [
     { client: 'writer', provider: 'first', plan: 'premium' },
     { client: 'writer', provider: 'second', plan: 'basic' }
-  ], entries: [{ client: 'writer', text: 'Keep this reflection.' }, { client: 'writer', text: 'Selected reflection.' }] });
+  ], entries: [{ client: 'writer', provider: 'first', text: 'Keep this reflection.' }, { client: 'writer', provider: 'first', text: 'Selected reflection.' }] });
   await signIn(page, 'writer');
   await expect(page).toHaveURL(/\/client$/);
   await page.goto('/enrollments');
@@ -59,7 +59,7 @@ test('confirmations cancel, dismiss, restore focus and mutate only the selected 
 });
 
 test('server validation recovers and pending feedback prevents repeated entry submissions', async ({ page, scenario }) => {
-  scenario({ accounts });
+  scenario({ accounts, enrollments: [{ client: 'writer', provider: 'first', plan: 'premium' }] });
   await signIn(page, 'writer');
   await expect(page).toHaveURL(/\/client$/);
   await page.goto('/journal_entries/new');

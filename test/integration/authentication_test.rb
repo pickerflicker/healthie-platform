@@ -6,7 +6,10 @@ class AuthenticationTest < ActionDispatch::IntegrationTest
   include DomainAccounts
   include RequestAuthentication
 
-  setup { User.destroy_all }
+  setup do
+    JournalEntry.delete_all
+    User.destroy_all
+  end
 
   test "unauthenticated role pages require login" do
     [ root_path, provider_home_path, client_home_path ].each do |path|

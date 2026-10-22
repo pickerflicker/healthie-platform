@@ -7,15 +7,19 @@ class JournalEntriesTest < ActionDispatch::IntegrationTest
   include RequestAuthentication
 
   setup do
+    JournalEntry.delete_all
     User.destroy_all
     @owner = create_test_account("client", "Journal Owner")
-    @entry = @owner.client.journal_entries.create!(text: "Owner's original entry")
+    @provider = create_test_account("provider", "Journal Reader")
+    @owner.client.enrollments.create!(provider: @provider.provider)
+    @entry = @owner.client.journal_entries.create!(provider: @provider.provider, text: "Owner's original entry")
   end
 
   test "owner CRUD persists text only and scoped listing excludes others" do
     other = create_test_account("client", "Other Journal Owner")
-    @owner.client.journal_entries.create!(text: "Owner's second entry")
-    foreign = other.client.journal_entries.create!(text: "Other client's private entry")
+    other.client.enrollments.create!(provider: @provider.provider)
+    @owner.client.journal_entries.create!(provider: @provider.provider, text: "Owner's second entry")
+    foreign = other.client.journal_entries.create!(provider: @provider.provider, text: "Other client's private entry")
     log_in_as(@owner)
     get journal_entries_path
     assert_response :success
@@ -61,6 +65,7 @@ class JournalEntriesTest < ActionDispatch::IntegrationTest
 
   test "foreign records and guessed IDs are concealed for direct reads and writes" do
     other = create_test_account("client", "Other Journal Owner")
+    other.client.enrollments.create!(provider: @provider.provider)
     log_in_as(other)
     [ @entry.id, -1 ].each do |id|
       get journal_entry_path(id)
@@ -79,8 +84,8 @@ class JournalEntriesTest < ActionDispatch::IntegrationTest
   end
 
   test "current providers can list and read but cannot create edit update or delete client journals" do
-    provider = create_test_account("provider", "Journal Reader")
-    @owner.client.enrollments.create!(provider: provider.provider)
+    provider = @provider
+
     log_in_as(provider)
     get journal_entries_path
     assert_response :success
@@ -119,10 +124,11 @@ class JournalEntriesTest < ActionDispatch::IntegrationTest
 
   test "instance policies independently enforce ownership and role" do
     other = create_test_account("client", "Other Journal Owner")
-    provider = create_test_account("provider", "Journal Reader")
-    [ @owner, other ].each { |account| account.client.enrollments.create!(provider: provider.provider) }
-    second_entry = @owner.client.journal_entries.create!(text: "Owner's second entry")
-    foreign_entry = other.client.journal_entries.create!(text: "Other client's private entry")
+    other.client.enrollments.create!(provider: @provider.provider)
+    provider = @provider
+
+    second_entry = @owner.client.journal_entries.create!(provider: @provider.provider, text: "Owner's second entry")
+    foreign_entry = other.client.journal_entries.create!(provider: @provider.provider, text: "Other client's private entry")
     assert JournalEntryPolicy.new(@owner, @entry).show?
     assert JournalEntryPolicy.new(provider, @entry).show?
     assert_not JournalEntryPolicy.new(other, @entry).show?

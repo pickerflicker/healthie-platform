@@ -1,6 +1,6 @@
 const { test, expect, signIn, signOut } = require('../support/browser');
 
-test('provider combined feed, shared client journal, plans and unrelated denials', async ({ page, scenario }, testInfo) => {
+test('provider combined feed, provider-attributed client journal, plans and unrelated denials', async ({ page, scenario }, testInfo) => {
   scenario({
     accounts: {
       "client": {"role": "client", "name": "Quinn Avery"},
@@ -14,10 +14,11 @@ test('provider combined feed, shared client journal, plans and unrelated denials
       {"client": "unrelated-client", "provider": "provider", "plan": "premium", "created_at": "2026-10-18T09:00:00Z"},
     ],
     entries: [
-      {"client": "client", "text": "First older journal", "created_at": "2026-10-17T08:00:00Z"},
-      {"client": "client", "text": "Second tied journal", "created_at": "2026-10-19T08:00:00Z"},
-      {"client": "client", "text": "Third tied journal", "created_at": "2026-10-19T08:00:00Z"},
-      {"client": "unrelated-client", "text": "Other client journal.", "created_at": "2026-10-20T08:00:00Z"},
+      {"client": "client", "provider": "provider", "text": "First older journal", "created_at": "2026-10-17T08:00:00Z"},
+      {"client": "client", "provider": "provider", "text": "Second tied journal", "created_at": "2026-10-19T08:00:00Z"},
+      {"client": "client", "provider": "provider", "text": "Third tied journal", "created_at": "2026-10-19T08:00:00Z"},
+      {"client": "unrelated-client", "provider": "provider", "text": "Other client journal.", "created_at": "2026-10-20T08:00:00Z"},
+      {"client": "client", "provider": "second-provider", "text": "Second-provider private journal"},
     ],
   });
   await signIn(page, 'provider');
@@ -57,7 +58,10 @@ test('provider combined feed, shared client journal, plans and unrelated denials
   await expect(page.locator('tbody tr')).toHaveCount(1);
   await expect(page.locator('tbody tr')).toContainText('Premium');
   await page.getByRole('link', { name: 'Combined journal feed', exact: true }).click();
-  await expect(page.locator('article')).toHaveCount(3);
+  await expect(page.locator('article')).toHaveCount(1);
+  await expect(page.locator('main')).toContainText('Second-provider private journal');
+  await expect(page.locator('main')).not.toContainText('Third tied journal');
+  expect((await page.request.get(entryURL)).status()).toBe(404);
   await expect(page.locator('main')).not.toContainText('Other client journal');
   expect((await page.goto(samJournal)).status()).toBe(404);
   await expect(page.getByRole('heading', { name: 'We couldn’t find that page.', exact: true })).toBeVisible();
@@ -76,11 +80,13 @@ test('warm provider list refreshes on enrollment changes and journal access is g
     },
     enrollments: [
       {"client": "client", "provider": "current-provider", "plan": "basic"},
+      {"client": "client", "provider": "empty-provider", "plan": "basic"},
     ],
+    removed_enrollments: [{ client: "client", provider: "empty-provider" }],
     entries: [
-      {"client": "client", "text": "First older journal", "created_at": "2026-10-17T08:00:00Z"},
-      {"client": "client", "text": "Second tied journal", "created_at": "2026-10-19T08:00:00Z"},
-      {"client": "client", "text": "Third tied journal", "created_at": "2026-10-19T08:00:00Z"},
+      {"client": "client", "provider": "empty-provider", "text": "First older journal", "created_at": "2026-10-17T08:00:00Z"},
+      {"client": "client", "provider": "empty-provider", "text": "Second tied journal", "created_at": "2026-10-19T08:00:00Z"},
+      {"client": "client", "provider": "empty-provider", "text": "Third tied journal", "created_at": "2026-10-19T08:00:00Z"},
     ],
   });
   await signIn(page, 'empty-provider');

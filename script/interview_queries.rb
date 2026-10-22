@@ -7,7 +7,7 @@ queries = {
   "Provider's clients" => provider.clients.order("enrollments.created_at DESC", "enrollments.id DESC").preload(:user),
   "Client's providers" => client.providers.order("enrollments.created_at DESC", "enrollments.id DESC").preload(:user),
   "Client's journal entries" => client.journal_entries.order(created_at: :desc, id: :desc),
-  "Provider's combined journal feed" => provider.journal_entries.order(created_at: :desc, id: :desc)
+  "Provider's combined journal feed" => provider.current_journal_entries.order(created_at: :desc, id: :desc)
 }
 
 queries.each do |label, relation|

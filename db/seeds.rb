@@ -2,6 +2,8 @@ abort "Seeds are only for local development/test" unless Rails.env.development? 
 
 require_relative "demo/roster"
 require_relative "demo/journals"
+require "active_support/testing/time_helpers"
+seed_clock = Object.new.extend(ActiveSupport::Testing::TimeHelpers)
 
 # Manual demo only. Fixed inclusive 90-day window: July 23–October 20, 2026 UTC.
 # No schema flags or text matching: a journal slot is (client, timestamp, ordinal).
@@ -53,6 +55,9 @@ User.transaction do
     pairs << [ provider, client, (provider + client).even? ? "basic" : "premium" ]
   end
   raise "Demo enrollment target not reached" unless pairs.size == 200
+  # Journal-bearing formerly unassigned clients need valid seed-only pairs.
+  # Keep Jamie (empty client) and Casey/Poppy/Wren (empty providers) unchanged.
+  [ 10, *95..99 ].each { |client| pairs << [ 3, client, "basic" ] }
   pairs.each_with_index do |(provider_index, client_index, plan), index|
     provider = accounts.fetch(DemoSeeds::PROVIDERS[provider_index][0])
     client = accounts.fetch(DemoSeeds::CLIENTS[client_index][0])
@@ -94,12 +99,38 @@ User.transaction do
       timestamp = reference - day.days + (index > 2 ? index % 10 : 0).hours
       slots << [ timestamp, DemoSeeds.journal_text(login, index, client_index) ]
     end
-    slots.group_by(&:first).each do |timestamp, entries|
-      # Existing rows at that exact timestamp occupy slots even if text was
-      # edited. Never overwrite journals or identify them by mutable text.
-      existing = client.journal_entries.where(created_at: timestamp).count
-      entries.drop(existing).each do |_, text|
-        client.journal_entries.create!(text: text, created_at: timestamp, updated_at: timestamp)
+    client.lock! # Serialize seed attribution with normal creates for this client.
+    # Baseline pair order is stable across reruns and independent of DB IDs.
+    providers = pairs.select { |_, index, _| index == client_index }.map do |provider_index, _, _|
+      accounts.fetch(DemoSeeds::PROVIDERS[provider_index][0])
+    end
+    slots.group_by(&:first).sort_by(&:first).each do |timestamp, entries|
+      # The established seed identity is (client, exact timestamp, ordinal).
+      # Only those occupied slots are seed-owned, never extra/unrecognized rows.
+      existing = client.journal_entries.where(created_at: timestamp).order(:id).limit(entries.size).to_a
+      entries.each_with_index do |(_, text), ordinal|
+        entry = existing[ordinal]
+        next if entry&.provider_id
+
+        month_start = timestamp.in_time_zone.beginning_of_month
+        provider = providers.find do |candidate|
+          enrollment = client.enrollments.find_by!(provider: candidate)
+          enrollment.premium? || client.journal_entries.where(provider: candidate,
+            created_at: month_start...month_start.next_month).count < JournalEntry::MONTHLY_ENTRIES_LIMIT
+        end
+        raise "No quota-consistent seed provider for #{login} at #{timestamp}" unless provider
+
+        if entry
+          # Explicit seed-only legacy attribution; immutable for ordinary updates.
+          # Preserve the existing ID, edited text and both timestamps.
+          entry.update_columns(provider_id: provider.id)
+        else
+          # Validate history at its own application month, without skipping any
+          # model validation or changing the normal current-month create rule.
+          seed_clock.travel_to(timestamp) do
+            client.journal_entries.create!(provider: provider, text: text, created_at: timestamp, updated_at: timestamp)
+          end
+        end
       end
     end
   end
@@ -108,6 +139,6 @@ end
 # Only after successful commit. RedisCacheStore#clear respects current namespace.
 Rails.cache.clear
 elapsed = Process.clock_gettime(Process::CLOCK_MONOTONIC) - started
-puts "Fictional manual demo baseline: 30 providers, 100 clients, 200 enrollments, 1,000 journal entries."
+puts "Fictional manual demo baseline: 30 providers, 100 clients, 206 enrollments, 1,000 journal entries."
 puts "Current database totals (including manual data): #{Provider.count} providers, #{Client.count} clients, #{Enrollment.count} enrollments, #{JournalEntry.count} journals."
 puts "Seed completed in #{elapsed.round(2)}s; cleared only healthie:#{Rails.env} cache."

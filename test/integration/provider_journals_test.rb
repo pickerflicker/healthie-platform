@@ -7,6 +7,7 @@ class ProviderJournalsTest < ActionDispatch::IntegrationTest
   include RequestAuthentication
 
   setup do
+    JournalEntry.delete_all
     User.destroy_all
     @client = create_test_account("client", "Visible Client").client
   end
@@ -16,10 +17,12 @@ class ProviderJournalsTest < ActionDispatch::IntegrationTest
     provider = create_test_account("provider", "Enrolled Reader")
     @client.enrollments.create!(provider: provider.provider, plan: :premium)
     # Creation/ID order deliberately differs from date order; the newest date also ties.
-    @client.journal_entries.create!(text: "Later visible entry", created_at: Time.utc(2026, 10, 19))
-    entry = @client.journal_entries.create!(text: "Earlier visible entry", created_at: Time.utc(2026, 10, 17))
-    @client.journal_entries.create!(text: "Tied later entry", created_at: Time.utc(2026, 10, 19))
-    other_entry = other.journal_entries.create!(text: "Unrelated private entry")
+    @client.journal_entries.create!(provider: provider.provider, text: "Later visible entry", created_at: Time.utc(2026, 10, 19))
+    entry = @client.journal_entries.create!(provider: provider.provider, text: "Earlier visible entry", created_at: Time.utc(2026, 10, 17))
+    @client.journal_entries.create!(provider: provider.provider, text: "Tied later entry", created_at: Time.utc(2026, 10, 19))
+    other_provider = create_test_account("provider", "Other Reader").provider
+    other.enrollments.create!(provider: other_provider)
+    other_entry = other.journal_entries.create!(provider: other_provider, text: "Unrelated private entry")
     log_in_as(provider)
     get provider_home_path
     assert_select "a[href=?]", journal_entries_path, text: "Combined journal feed"
@@ -45,11 +48,14 @@ class ProviderJournalsTest < ActionDispatch::IntegrationTest
     assert_response :not_found
   end
 
-  test "adding exposes historical entries and removing revokes reads and writes on the next request" do
+  test "re-adding exposes only attributed historical entries and removing revokes reads and writes on the next request" do
     other = create_test_account("client", "Unrelated Client").client
     empty_provider = create_test_account("provider", "Unenrolled Reader")
-    @entry = @client.journal_entries.create!(text: "Earlier visible entry", created_at: Time.utc(2026, 10, 17))
-    later = @client.journal_entries.create!(text: "Later visible entry", created_at: Time.utc(2026, 10, 19))
+    provider = empty_provider
+    @client.enrollments.create!(provider: provider.provider)
+    @entry = @client.journal_entries.create!(provider: provider.provider, text: "Earlier visible entry", created_at: Time.utc(2026, 10, 17))
+    later = @client.journal_entries.create!(provider: provider.provider, text: "Later visible entry", created_at: Time.utc(2026, 10, 19))
+    @client.enrollments.find_by!(provider: provider.provider).destroy!
     log_in_as(empty_provider)
     get journal_entries_path
     assert_response :success

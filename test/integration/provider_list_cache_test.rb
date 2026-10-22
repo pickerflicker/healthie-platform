@@ -20,6 +20,7 @@ class ProviderListCacheTest < ActionDispatch::IntegrationTest
   end
 
   teardown do
+    JournalEntry.where(client_id: [ @client, @other ].compact.map(&:id)).delete_all
     @users.reverse_each(&:destroy!)
     [ @client, @other ].each { |client| Rails.cache.delete(Client::ProviderList.cache_key(client.id)) }
   end
@@ -160,7 +161,7 @@ class ProviderListCacheTest < ActionDispatch::IntegrationTest
   end
 
   test "warm display cache cannot grant removed provider journal or feed access" do
-    entry = @client.journal_entries.create!(text: "Private cache regression")
+    entry = @client.journal_entries.create!(provider: @provider, text: "Private cache regression")
     actor = @provider.user
     assert JournalEntryPolicy.new(actor, entry).show?
     stale = @client.provider_list
@@ -171,7 +172,7 @@ class ProviderListCacheTest < ActionDispatch::IntegrationTest
     assert_not JournalEntryPolicy.new(actor, entry).show?
     assert_not ClientPolicy.new(actor, @client).show?
     assert_empty JournalEntryPolicy::Scope.new(actor, JournalEntry.all).resolve
-    assert_empty actor.provider.journal_entries
+    assert_empty actor.provider.current_journal_entries
     assert_equal "cache-provider@example.test", actor.email
     assert actor.valid_password?(DomainAccounts::PASSWORD)
     log_in_as(actor)

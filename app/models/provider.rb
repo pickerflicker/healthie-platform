@@ -73,7 +73,8 @@ class Provider < ApplicationRecord
 
   has_many :enrollments, dependent: :destroy
   has_many :clients, through: :enrollments
-  has_many :journal_entries, through: :clients
+  has_many :journal_entries, inverse_of: :provider
+
   belongs_to :user, inverse_of: :provider
   delegate :name, :email, to: :user
   validates :user_id, uniqueness: true
@@ -82,6 +83,10 @@ class Provider < ApplicationRecord
   validate :supported_credentials
   before_destroy :retain_account_profile
   after_update :invalidate_provider_lists, if: :saved_change_to_credentials?
+
+  def current_journal_entries
+    journal_entries.where(client_id: enrollments.select(:client_id))
+  end
 
   def credentials=(values)
     # The empty string is Rails' hidden checkbox sentinel, not a credential.

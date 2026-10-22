@@ -12,7 +12,7 @@ class JournalEntryPolicy < ApplicationPolicy
   end
 
   def show?
-    create? || (user&.provider? && user.provider.enrollments.exists?(client_id: record.client_id)) || false
+    create? || (user&.provider? && record.provider_id == user.provider.id && user.provider.enrollments.exists?(client_id: record.client_id)) || false
   end
 
   def edit?
@@ -32,7 +32,7 @@ class JournalEntryPolicy < ApplicationPolicy
       if user&.client?
         scope.where(client_id: user.client.id)
       elsif user&.provider?
-        scope.where(client_id: user.provider.enrollments.select(:client_id))
+        scope.where(provider_id: user.provider.id, client_id: user.provider.enrollments.select(:client_id))
       else
         scope.none
       end
