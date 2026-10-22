@@ -6,6 +6,7 @@ abort "Refusing non-local disposable test database" unless Rails.env.test? && co
   %w[127.0.0.1 localhost].include?(config.configuration_hash[:host])
 
 scenario = JSON.parse($stdin.read)
+JournalEntry.delete_all
 User.destroy_all
 Rails.cache.clear
 
@@ -25,6 +26,12 @@ User.transaction do
   end
   scenario.fetch("entries", []).each do |attributes|
     attributes = attributes.symbolize_keys
-    JournalEntry.create!(**attributes.except(:client), client: accounts.fetch(attributes.fetch(:client)).client)
+    JournalEntry.create!(**attributes.except(:client, :provider),
+      client: accounts.fetch(attributes.fetch(:client)).client,
+      provider: accounts.fetch(attributes.fetch(:provider)).provider)
+  end
+  scenario.fetch("removed_enrollments", []).each do |attributes|
+    Enrollment.find_by!(client: accounts.fetch(attributes.fetch("client")).client,
+      provider: accounts.fetch(attributes.fetch("provider")).provider).destroy!
   end
 end

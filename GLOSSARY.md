@@ -17,10 +17,10 @@ Optional degrees, licenses/professional designations and certifications displaye
 The basic or premium service level for a particular provider–client relationship. A client's plan can differ between providers.
 
 **Journal entry**:
-A client-authored health journal record containing freeform text. In the pre-work baseline it is client-wide and readable by the client’s associated providers.
+A client-authored health journal record containing freeform text. Each new entry is attributed to one provider and readable by that currently enrolled provider and its client. Unattributed legacy history remains client-only.
 
 **Login account**:
 The identity used to sign in, holding the person’s name and email. In the pre-work baseline, each account has exactly one role—provider or client—and a matching provider or client profile.
 
 **Provider relationship**:
-A client's enrollment with a particular provider, carrying one Basic or Premium plan. Clients can add and remove these relationships; a current relationship grants the provider read access to that client's journal.
+A client's enrollment with a particular provider, carrying one Basic or Premium plan. Clients can add and remove these relationships; current membership permits reads of only that provider's attributed entries. Basic permits 10 existing entries per pair per application calendar month; Premium is unlimited.

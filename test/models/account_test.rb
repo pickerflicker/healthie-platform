@@ -1,7 +1,10 @@
 require "test_helper"
 
 class AccountTest < ActiveSupport::TestCase
-  setup { User.destroy_all }
+  setup do
+    JournalEntry.delete_all
+    User.destroy_all
+  end
 
   def account(role = "client", email = "alex@example.com")
     User.create_account!(name: "Alex", email: email, password: "test-password-123", role: role)

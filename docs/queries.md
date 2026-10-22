@@ -22,7 +22,7 @@ client = User.find_by!(email: "client@healthie.example").client
 provider.clients.order("enrollments.created_at DESC", "enrollments.id DESC").preload(:user)
 client.providers.order("enrollments.created_at DESC", "enrollments.id DESC").preload(:user)
 client.journal_entries.order(created_at: :desc, id: :desc)
-provider.journal_entries.order(created_at: :desc, id: :desc)
+provider.current_journal_entries.order(created_at: :desc, id: :desc)
 ```
 
 Both journal listings use creation time descending, then ID descending. Editing
@@ -33,9 +33,8 @@ the associations themselves remain unscoped. These are ordinary ActiveRecord
 relations, directly runnable without an HTTP session. They are not
 authorization APIs: a console operator selects the profile explicitly. Web reads
 start with Pundit scopes and independently authorize records. They consult current
-enrollments, so adding a provider exposes historical entries and removing one
-revokes subsequent direct/list reads without deleting journal entries. Plans do
-not restrict journal visibility. Providers have read-only access.
+enrollments, so adding/re-adding a provider exposes only its attributed history and removing one
+revokes subsequent direct/list reads without deleting journal entries. Plans affect creation limits; attribution and current membership govern visibility. Providers have read-only access.
 
 For relationship plans, use the join records:
 
@@ -50,26 +49,25 @@ accounts, credentials, memorable stories, precise rerun restoration rules and th
 Docker seed command. These are fictional manual demo fixtures, independent of
 regular model/request/browser test scenarios.
 
-A clean baseline implements exactly **30 providers, 100 clients, 200 enrollments
+A clean baseline implements exactly **30 providers, 100 clients, 206 enrollments
 and 1,000 journals**. The fixed inclusive 90-day window is **July 23–October 20,
 2026 UTC**, with endpoints `2026-07-23T08:00:00Z` and `2026-10-20T08:00:00Z`.
 Existing development data and edits can change these totals/distributions.
 
 | Distribution | Clean baseline |
 | --- | --- |
-| Enrollment plans | 103 Basic / 97 Premium |
+| Enrollment plans | 109 Basic / 97 Premium |
 | Provider credentials | 9 RDN+LD / 4 RDN+LD+CDCES / 7 CNS / 10 MD; no blanks |
-| Provider client counts | Morgan 38; Taylor 9; Casey, Poppy and Wren 0; Cedar 1; Pearl 2; remaining 23 providers 4–10 each |
-| Client provider counts | 7 unassigned / 10 with one / 70 with two / 6 with three / 6 with four / Alex with eight |
-| Primary provider | Morgan: 38 clients, 503 combined entries, both plans, Quinn with no entries |
+| Provider client counts | Morgan 38; Taylor 9; Casey, Poppy and Wren 0; Cedar 1; Pearl 2; Gregory House 16; remaining 22 providers 4–10 each |
+| Client provider counts | 1 unassigned / 16 with one / 70 with two / 6 with three / 6 with four / Alex with eight |
+| Primary provider | Morgan: 38 clients, 476 attributed combined entries, both plans, Quinn with no entries |
 | Primary client | Alex: 8 providers, 50 entries, 22 available providers; Basic Morgan / Premium Taylor |
 | Journal volumes | Alex 50, Sam 12, Jamie 0, Sherlock 45, Frodo 40, Bilbo 35, Arthur 30, Dorothy 25, Picard 40, Quinn 0, Luna 15, Pip 2; 87 others with 8, Marlow Kingsley with 10 |
 
 Morgan and Taylor share Alex and Sherlock. Taylor cannot access Sam; Morgan
-cannot access Luna's unassigned history. Credentials belong to providers, while
-plans belong to each enrollment. Shared clients can have different plans with
-different providers. Casey/Jamie remain deliberate empty accounts, and the last
-five invented clients plus Luna and Jamie have no providers.
+cannot access Luna's history attributed to Gregory House. Credentials belong to providers, while
+plans belong to each enrollment. Providers sharing a client see separate attributed entries. Shared clients can have different plans with
+different providers. Casey/Jamie remain deliberate empty accounts, and only Jamie has no providers; Luna and the final five invented clients now have explicit Basic seed relationships with Gregory House.
 
 Ordering is explicit and does not follow account age. On a clean load Morgan's
 newest two enrollments are Frodo then Sherlock, tied at October 20 10:00 UTC.
@@ -100,14 +98,9 @@ Observed local native run: 2.30 seconds clean, 0.68 seconds unchanged rerun
   `(provider_id, client_id)` index enforces one relationship per pair and supports
   provider-to-clients lookups; the separate `client_id` index supports the reverse
   lookup. A standalone `provider_id` index would duplicate the leading access path.
-- JournalEntry belongs to Client, with required text and a foreign key. It has no
-  provider/enrollment ownership: every current provider shares client-wide access
-  under the accepted privacy assumption (ADR 0002).
-- The journal B-tree `(client_id, created_at, id)` supports filtering by one client
-  and a backward scan for that client's `created_at DESC, id DESC`. Across several
-  clients, rows grouped by client do **not** guarantee the provider feed's global
-  order; the explicit `ORDER BY` remains required and PostgreSQL may sort after
-  joining. No additional index is justified by a seed-scale dataset alone.
+- JournalEntry belongs to Client and directly to Provider, with text and ordinary foreign keys. NULL provider_id is reserved for client-only legacy history; all new records validate current enrollment and plan.
+- `(client_id, created_at, id)` preserves client filtering/newest-first reads. `(provider_id, client_id, created_at)` supports direct pair/month counts. `(provider_id, created_at, id)` supports provider feeds, with current-enrollment filtering. These leading paths make a provider-only index redundant. Explicit ordering remains required.
+- `provider.journal_entries` is raw attributed ownership, including history after removal. Use `provider.current_journal_entries.order(created_at: :desc, id: :desc)` for the standalone readable feed. Pundit independently enforces current membership and attribution for web requests.
 - Both journal listing queries and provider-client lists remain uncached in Redis.
   ActiveRecord's ordinary request-local query cache is separate from persistent
   application caching. The only Redis result cache is the per-client provider

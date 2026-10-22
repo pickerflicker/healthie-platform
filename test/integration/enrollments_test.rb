@@ -7,6 +7,7 @@ class EnrollmentsTest < ActionDispatch::IntegrationTest
   include RequestAuthentication
 
   setup do
+    JournalEntry.delete_all
     User.destroy_all
     @client = create_test_account("client", "Relationship Client")
     @provider = create_test_account("provider", "Current Provider")
@@ -18,7 +19,7 @@ class EnrollmentsTest < ActionDispatch::IntegrationTest
     other = create_test_account("client", "Other Client")
     second = create_test_account("provider", "Second Provider")
     @client.client.enrollments.create!(provider: second.provider, plan: :premium)
-    entry = @client.client.journal_entries.create!(text: "Retain this entry after removal")
+    entry = @client.client.journal_entries.create!(provider: @provider.provider, text: "Retain this entry after removal")
     log_in_as(@client)
     get enrollments_path
     assert_response :success

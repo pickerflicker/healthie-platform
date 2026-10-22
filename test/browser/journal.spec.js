@@ -4,11 +4,13 @@ test('client journal persisted CRUD journey', async ({ page, scenario }, testInf
   scenario({
     accounts: {
       "client": {"role": "client", "name": "Quinn Avery"},
+      "provider": {"role": "provider", "name": "Journal Reader"},
     },
+    enrollments: [{ client: "client", provider: "provider", plan: "premium" }],
     entries: [
-      {"client": "client", "text": "First older journal", "created_at": "2026-10-17T08:00:00Z"},
-      {"client": "client", "text": "Second tied journal", "created_at": "2026-10-19T08:00:00Z"},
-      {"client": "client", "text": "Third tied journal", "created_at": "2026-10-19T08:00:00Z"},
+      {"client": "client", "provider": "provider", "text": "First older journal", "created_at": "2026-10-17T08:00:00Z"},
+      {"client": "client", "provider": "provider", "text": "Second tied journal", "created_at": "2026-10-19T08:00:00Z"},
+      {"client": "client", "provider": "provider", "text": "Third tied journal", "created_at": "2026-10-19T08:00:00Z"},
     ],
   });
   await signIn(page, 'client');

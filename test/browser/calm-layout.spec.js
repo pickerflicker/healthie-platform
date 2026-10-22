@@ -4,8 +4,8 @@ test('real role pages reflow with populated lists and long text at desktop, 390p
   test.setTimeout(90000);
   const accounts = { writer: { role: 'client', name: 'Riley A-Very-Long-Family-Name Montgomery' }, empty: { role: 'client', name: 'Empty Journal' } };
   for (let n = 0; n < 12; n++) accounts[`provider${n}`] = { role: 'provider', name: `Morgan ${'LongFamilyName'.repeat(4)} ${n}` };
-  const enrollments = Array.from({ length: 11 }, (_, n) => ({ client: 'writer', provider: `provider${n}`, plan: n % 2 ? 'premium' : 'basic' }));
-  const entries = Array.from({ length: 15 }, (_, n) => ({ client: 'writer', text: `Reflection ${n}.\n${'A-long-unbroken-word'.repeat(30)}\nA quiet moment.` }));
+  const enrollments = Array.from({ length: 11 }, (_, n) => ({ client: 'writer', provider: `provider${n}`, plan: n === 0 || n % 2 ? 'premium' : 'basic' }));
+  const entries = Array.from({ length: 15 }, (_, n) => ({ client: 'writer', provider: 'provider0', text: `Reflection ${n}.\n${'A-long-unbroken-word'.repeat(30)}\nA quiet moment.` }));
   scenario({ accounts, enrollments, entries });
   await signIn(page, 'writer');
   await expect(page).toHaveURL(/\/client$/);

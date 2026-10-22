@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_21_031000) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_22_192000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -29,7 +29,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_21_031000) do
     t.datetime "updated_at", null: false
     t.index ["client_id"], name: "index_enrollments_on_client_id"
     t.index ["provider_id", "client_id"], name: "index_enrollments_on_provider_id_and_client_id", unique: true
-    t.check_constraint "plan::text = ANY (ARRAY['basic'::character varying, 'premium'::character varying]::text[])", name: "enrollments_plan_valid"
+    t.check_constraint "plan::text = ANY (ARRAY['basic'::character varying::text, 'premium'::character varying::text])", name: "enrollments_plan_valid"
   end
 
   create_table "journal_entries", force: :cascade do |t|
@@ -37,7 +37,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_21_031000) do
     t.text "text", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.bigint "provider_id"
     t.index ["client_id", "created_at", "id"], name: "index_journal_entries_on_client_id_and_created_at_and_id"
+    t.index ["provider_id", "client_id", "created_at"], name: "index_journals_on_provider_client_month"
+    t.index ["provider_id", "created_at", "id"], name: "index_journals_on_provider_feed"
   end
 
   create_table "providers", force: :cascade do |t|
@@ -63,5 +66,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_21_031000) do
   add_foreign_key "enrollments", "clients"
   add_foreign_key "enrollments", "providers"
   add_foreign_key "journal_entries", "clients"
+  add_foreign_key "journal_entries", "providers"
   add_foreign_key "providers", "users"
 end

@@ -18,7 +18,7 @@ def account(login)
 end
 
 load Rails.root.join("db/seeds.rb")
-verify([ Provider.count, Client.count, Enrollment.count, JournalEntry.count ] == [ 30, 100, 200, 1000 ], "Wrong clean volumes")
+verify([ Provider.count, Client.count, Enrollment.count, JournalEntry.count ] == [ 30, 100, 206, 1000 ], "Wrong clean volumes")
 morgan = account("provider").provider
 alex = account("client").client
 taylor = account("second-provider").provider
@@ -28,7 +28,7 @@ verify(Provider.all.all? { |p| p.credentials.present? && (p.credentials - Provid
 verify(account("empty-provider").provider.clients.empty?, "Casey not empty")
 verify(account("empty-client").client.providers.empty? && account("empty-client").client.journal_entries.empty?, "Jamie not empty")
 verify(account("quinn-stillwater").client.journal_entries.empty? && morgan.clients.exists?(account("quinn-stillwater").client.id), "Missing enrolled zero-journal")
-verify(account("luna-lovegood").client.providers.empty? && account("luna-lovegood").client.journal_entries.count == 15, "Missing unassigned history")
+verify(account("luna-lovegood").client.providers.one? && account("luna-lovegood").client.journal_entries.count == 15, "Missing attributed Luna history")
 verify(account("pip-willow").client.journal_entries.count == 2, "Missing quiet client")
 verify(morgan.clients.exists?(sam.id) && !taylor.clients.exists?(sam.id), "Sam denial actor invalid")
 verify(!morgan.clients.exists?(account("luna-lovegood").client.id), "Morgan unrelated scenario invalid")
@@ -37,7 +37,13 @@ verify(account("sherlock-holmes").client.providers.exists?(morgan.id) && account
 verify(JournalEntry.minimum(:created_at) == Time.iso8601("2026-07-23T08:00:00Z") && JournalEntry.maximum(:created_at) == Time.iso8601("2026-10-20T08:00:00Z"), "Wrong 90-day endpoints")
 verify(account("provider").valid_password?("Healthie-demo-2026") && account("client").valid_password?("Healthie-demo-2026"), "Primary password invalid")
 
-orders = -> { [ morgan.enrollments.order(created_at: :desc, id: :desc).pluck(:id), alex.enrollments.order(created_at: :desc, id: :desc).pluck(:id), alex.journal_entries.order(created_at: :desc, id: :desc).pluck(:id), morgan.journal_entries.order(created_at: :desc, id: :desc).pluck(:id) ] }
+verify(JournalEntry.where(provider_id: nil).none?, "Unattributed seed journals")
+verify(JournalEntry.where.not(id: JournalEntry.joins("INNER JOIN enrollments ON enrollments.client_id = journal_entries.client_id AND enrollments.provider_id = journal_entries.provider_id").select(:id)).none?, "Invalid seed pairs")
+monthly = JournalEntry.joins("INNER JOIN enrollments ON enrollments.client_id = journal_entries.client_id AND enrollments.provider_id = journal_entries.provider_id").where(enrollments: { plan: "basic" }).group(:client_id, :provider_id, Arel.sql("date_trunc('month', journal_entries.created_at)")).count
+verify(monthly.values.all? { |count| count <= 10 }, "Basic seed month exceeds ten")
+puts "PASS all 1,000 seed journals attributed to current pairs; Basic monthly maximum #{monthly.values.max}"
+
+orders = -> { [ morgan.enrollments.order(created_at: :desc, id: :desc).pluck(:id), alex.enrollments.order(created_at: :desc, id: :desc).pluck(:id), alex.journal_entries.order(created_at: :desc, id: :desc).pluck(:id), morgan.current_journal_entries.order(created_at: :desc, id: :desc).pluck(:id) ] }
 before = snapshot
 before_order = orders.call
 load Rails.root.join("db/seeds.rb")
@@ -45,16 +51,28 @@ verify(snapshot == before && orders.call == before_order, "Unchanged reseed chan
 puts "PASS unchanged rerun: all attributes, IDs, timestamps, password digests and four query orders identical"
 puts "Plans: #{Enrollment.group(:plan).count.inspect}"
 puts "Credentials: #{Provider.group(:credentials).count.inspect}"
-puts "Morgan: #{morgan.clients.count} clients / #{morgan.journal_entries.count} feed entries; Alex: 8 providers / 50 journals"
+puts "Morgan: #{morgan.clients.count} clients / #{morgan.current_journal_entries.count} feed entries; Alex: 8 providers / 50 journals"
 puts "Provider volumes: #{Provider.order(:id).map { |p| [ p.name, p.clients.count ] }.inspect}"
 puts "Client relationship distribution: #{Client.all.group_by { |c| c.providers.count }.transform_values(&:size).sort.to_h.inspect}"
 puts "90-day range: #{JournalEntry.minimum(:created_at).iso8601} .. #{JournalEntry.maximum(:created_at).iso8601}"
+
+# Simulate upgrading the previous unattributed baseline, including an edited row.
+# Timestamp/ordinal is the seed namespace, independent of mutable text.
+alex.journal_entries.order(:id).first.update!(text: "Edited pre-attribution story survives")
+legacy_before = JournalEntry.order(:id).map { |entry| entry.attributes.except("provider_id") }
+JournalEntry.update_all(provider_id: nil)
+load Rails.root.join("db/seeds.rb")
+verify(JournalEntry.where(provider_id: nil).none?, "Legacy seed attribution incomplete")
+verify(JournalEntry.order(:id).map { |entry| entry.attributes.except("provider_id") } == legacy_before, "Legacy attribution changed IDs/content/timestamps")
+puts "PASS previous seed baseline attributed in place without changing IDs, content or timestamps"
 
 # Real manually-created data and deliberate edits, followed by missing-state repair.
 manual_provider = User.create_account!(name: "Manual Sentinel", email: "sentinel-provider@example.test", password: "Sentinel-only-2026", role: "provider").provider
 manual_client = User.create_account!(name: "Manual Client", email: "sentinel-client@example.test", password: "Sentinel-only-2026", role: "client").client
 manual_client.enrollments.create!(provider: manual_provider, plan: :premium)
-manual_client.journal_entries.create!(text: "Manually entered sentinel")
+manual_client.journal_entries.create!(provider: manual_provider, text: "Manually entered sentinel")
+JournalEntry.insert_all!([ { client_id: manual_client.id, text: "Unrecognized manual legacy history" },
+  { client_id: alex.id, text: "Unrecognized seed-client legacy history", created_at: Time.utc(2025, 1, 1) } ])
 alex.enrollments.create!(provider: manual_provider, plan: :basic)
 account("provider").update!(name: "Manually edited Morgan", password: "Edited-password-2026")
 morgan.update!(credentials: %w[CNS])

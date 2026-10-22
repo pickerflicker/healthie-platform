@@ -12,5 +12,8 @@ The controller starts with `policy_scope(JournalEntry)` and applies the same exp
 The [fictional manual demo](demo.md) now includes 50
 Alex entries over a fixed 90-day baseline, preserving the three original notes
 and their timestamp tie. Morgan's feed includes several fictional clients; Sam's
-journal is denied to Taylor, while Luna's unassigned history is denied to Morgan.
+journal is denied to Taylor, while Luna's history attributed to Gregory House is denied to Morgan.
 Jamie remains empty. These manual seeds are independent of automated test data.
+
+
+Each new entry requires an enrolled provider. Basic counts existing entries for that pair in the current UTC calendar month (10 allowed); Premium is unlimited. Client ownership and creation time are server-derived in HTTP requests and immutable on updates. Text edits remain possible at the cap. The backend accepts provider_id; the unchanged text-only form works only for exactly one enrollment. Zero/multiple enrollments without a provider ID produce validation errors until the selector is implemented.
