@@ -132,7 +132,7 @@
   .auth-form-wrap { display:flex; flex-direction:column; justify-content:center; padding:45px; background:#fafbf8; }
   .auth-form { max-width:330px; width:100%; margin:auto; }
   .auth-form .wordmark { display:none; }
-  .auth-form h1 { margin-bottom:10px; }
+  .auth-form h1 { margin-bottom:10px; font-size:34px; }
   .auth-form > p { color:#647169; font-size:13px; margin-bottom:29px; }
   .auth-form .fieldset { padding:0; margin-bottom:22px; }
   .auth-form .input { width:100%; background:#fff; }
